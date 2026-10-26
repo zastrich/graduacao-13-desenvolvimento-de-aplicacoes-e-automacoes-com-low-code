@@ -1,0 +1,6 @@
+{
+  "nomeFluxo": "Integração Geral",
+  "gatilho": "Webhook",
+  "acoes": "Receber dados, processar de algum jeito, decidir o que fazer, talvez chamar umas APIs, mandar notificações em vários canais e salvar em algum lugar.",
+  "detalhes": "Pedido propositalmente vago para testar a robustez do gerador."
+}

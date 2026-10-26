@@ -1,0 +1,6 @@
+{
+  "nomeFluxo": "Cadastro via Formulário",
+  "gatilho": "Formulário n8n",
+  "acoes": "Exibir um formulário pedindo nome e e-mail e salvar a resposta em uma planilha do Google Sheets.",
+  "detalhes": "A planilha tem as colunas 'nome' e 'email'."
+}

@@ -1,0 +1,6 @@
+{
+  "nomeFluxo": "Monitor de Status de API",
+  "gatilho": "Agendamento (Cron)",
+  "acoes": "A cada hora, consultar uma API de status via HTTP e enviar uma mensagem no Slack com o resultado.",
+  "detalhes": "A API retorna um campo 'status'. Enviar a mensagem no canal #monitoramento."
+}

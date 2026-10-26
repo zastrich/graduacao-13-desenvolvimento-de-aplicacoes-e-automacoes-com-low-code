@@ -1,0 +1,6 @@
+{
+  "nomeFluxo": "Recebedor de Leads",
+  "gatilho": "Webhook",
+  "acoes": "Receber um lead por webhook (POST). Se o campo 'score' for maior que 50, enviar um e-mail de boas-vindas pelo Gmail; caso contrário, apenas registrar.",
+  "detalhes": "O corpo do webhook traz 'email' e 'score'."
+}

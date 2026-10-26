@@ -1,0 +1,729 @@
+{
+  "id": "c9nRAfHWkd5hKbVL",
+  "name": "[Meta] Criador Automático de Fluxos via LLM",
+  "nodes": [
+    {
+      "id": "c-trigger",
+      "name": "Solicitar Automação",
+      "webhookId": "criador-de-fluxos",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -600,
+        300
+      ],
+      "parameters": {
+        "formTitle": "Criador de Automações",
+        "formDescription": "Descreva a automação em etapas claras. Quanto mais específico, melhor o fluxo gerado. Siga o guia de cada campo abaixo.",
+        "formFields": {
+          "values": [
+            {
+              "fieldType": "html",
+              "elementName": "guia",
+              "html": "<div style=\"border:1px solid #ddd;border-radius:8px;padding:12px;background:#fafafa\"><strong>Como descrever um bom fluxo (passo a passo):</strong><ol style=\"margin:8px 0 0 18px;padding:0\"><li><b>Dados de entrada:</b> liste os dados que serão coletados do usuário (ex.: matrícula, data de início, data de fim).</li><li><b>Fontes de validação:</b> diga onde os dados serão consultados/validados (ex.: planilha com abas \"colaboradores\" e \"ferias\"). Para teste, uma base CSV de exemplo é embutida.</li><li><b>Regras de validação:</b> descreva cada regra, uma por linha (ex.: antecedência mínima de 30 dias; mínimo de 5 dias; não exceder o saldo).</li><li><b>Etapas do processo:</b> descreva o passo a passo (ex.: validar → se reprovado avisar o colaborador → se aprovado pedir aprovação do gestor → registrar → notificar).</li><li><b>Aprovações e notificações:</b> indique quem aprova manualmente e quais e-mails/mensagens enviar (os e-mails são simulados por enquanto).</li></ol></div>"
+            },
+            {
+              "fieldLabel": "Nome do fluxo",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "Ex.: Aprovação de Férias"
+            },
+            {
+              "fieldLabel": "Gatilho inicial",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Webhook"
+                  },
+                  {
+                    "option": "Agendamento (Cron)"
+                  },
+                  {
+                    "option": "Formulário n8n"
+                  },
+                  {
+                    "option": "E-mail (Gmail)"
+                  },
+                  {
+                    "option": "Telegram"
+                  },
+                  {
+                    "option": "Manual"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "1) Dados de entrada (o que coletar do usuário)",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "Ex.: matrícula, data de início, data de fim, se vai vender parte das férias"
+            },
+            {
+              "fieldLabel": "2) Fontes de validação (onde consultar os dados)",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "Ex.: planilha com aba \"colaboradores\" (matricula, saldoDias, emailGestor) e aba \"ferias\" (histórico)"
+            },
+            {
+              "fieldLabel": "3) Regras de validação (uma por linha)",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "Ex.:\\n- antecedência mínima de 30 dias\\n- mínimo de 5 dias corridos\\n- não exceder o saldo de dias"
+            },
+            {
+              "fieldLabel": "4) Etapas do processo (passo a passo)",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "Ex.: validar; se reprovado mostrar erro ao colaborador; se aprovado enviar e-mail ao gestor e abrir aprovação manual; registrar; notificar o colaborador"
+            },
+            {
+              "fieldLabel": "5) Aprovações e notificações",
+              "fieldType": "textarea",
+              "requiredField": false,
+              "placeholder": "Ex.: o gestor do colaborador aprova manualmente; enviar e-mail (simulado) ao gestor e ao colaborador"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c-estado",
+      "name": "Estado",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -360,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e-nome",
+              "name": "nomeFluxo",
+              "value": "={{ $json[\"Nome do fluxo\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "e-gat",
+              "name": "gatilho",
+              "value": "={{ $json[\"Gatilho inicial\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "e-aco",
+              "name": "acoes",
+              "value": "={{ \"DADOS DE ENTRADA:\\n\" + $json[\"1) Dados de entrada (o que coletar do usuário)\"] + \"\\n\\nFONTES DE VALIDAÇÃO:\\n\" + $json[\"2) Fontes de validação (onde consultar os dados)\"] + \"\\n\\nREGRAS DE VALIDAÇÃO:\\n\" + $json[\"3) Regras de validação (uma por linha)\"] + \"\\n\\nETAPAS DO PROCESSO:\\n\" + $json[\"4) Etapas do processo (passo a passo)\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "e-det",
+              "name": "detalhes",
+              "value": "={{ $json[\"5) Aprovações e notificações\"] ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "e-fb",
+              "name": "feedback",
+              "value": "=",
+              "type": "string"
+            },
+            {
+              "id": "e-err",
+              "name": "errosAnteriores",
+              "value": "={{ [] }}",
+              "type": "array"
+            },
+            {
+              "id": "e-rod",
+              "name": "rodada",
+              "value": "={{ 1 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c-chamar",
+      "name": "Chamar Núcleo",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        -120,
+        300
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "EOUGKEns1rkLk9fJ",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nomeFluxo": "={{ $json.nomeFluxo }}",
+            "gatilho": "={{ $json.gatilho }}",
+            "acoes": "={{ $json.acoes }}",
+            "detalhes": "={{ $json.detalhes }}",
+            "feedback": "={{ $json.feedback }}",
+            "errosAnteriores": "={{ $json.errosAnteriores }}"
+          }
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "c-if-ok",
+      "name": "Gerou com sucesso?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        120,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ok",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c-preview",
+      "name": "Pré-visualização",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== ARQUIVO GERADO por scripts/n8n/build-code-nodes.ts — não edite à mão =====\n// Code node (Run Once for All Items). Sem require/process/$env.\n\n// --- libs ---\nconst PASSO_X = 260;\nconst PASSO_Y = 160;\nconst ORIGEM_X = 0;\nconst ORIGEM_Y = 300;\n/** Nós sem nenhuma conexão de entrada (candidatos a raiz). */\nfunction semEntrada(nomes, connections) {\n    const temEntrada = new Set();\n    for (const origem of Object.keys(connections)) {\n        const saidas = connections[origem]?.main ?? [];\n        for (const porta of saidas) {\n            for (const alvo of porta ?? []) {\n                if (alvo?.node)\n                    temEntrada.add(alvo.node);\n            }\n        }\n    }\n    return nomes.filter((n) => !temEntrada.has(n));\n}\n/** Calcula a profundidade (coluna) de cada nó por BFS a partir das raízes. */\nfunction calcularProfundidades(nomes, connections) {\n    const prof = new Map();\n    let raizes = semEntrada(nomes, connections);\n    if (raizes.length === 0 && nomes.length > 0)\n        raizes = [nomes[0]]; // ciclo sem raiz\n    const fila = raizes.map((n) => ({ node: n, d: 0 }));\n    for (const r of raizes)\n        prof.set(r, 0);\n    let guard = 0;\n    const maxIter = nomes.length * nomes.length + 10;\n    while (fila.length > 0 && guard++ < maxIter) {\n        const { node, d } = fila.shift();\n        const saidas = connections[node]?.main ?? [];\n        for (const porta of saidas) {\n            for (const alvo of porta ?? []) {\n                const nome = alvo?.node;\n                if (!nome)\n                    continue;\n                const atual = prof.get(nome);\n                if (atual === undefined || d + 1 > atual) {\n                    prof.set(nome, d + 1);\n                    fila.push({ node: nome, d: d + 1 });\n                }\n            }\n        }\n    }\n    // nós não alcançados (desconectados) ficam na coluna 0\n    for (const n of nomes)\n        if (!prof.has(n))\n            prof.set(n, 0);\n    return prof;\n}\n/**\n * Retorna um mapa nome -> [x, y]. Nós na mesma coluna são empilhados\n * verticalmente de forma determinística (ordem de `nomes`).\n */\nfunction calcularPosicoes(nomes, connections) {\n    const prof = calcularProfundidades(nomes, connections);\n    const porColuna = new Map();\n    for (const n of nomes) {\n        const c = prof.get(n) ?? 0;\n        if (!porColuna.has(c))\n            porColuna.set(c, []);\n        porColuna.get(c).push(n);\n    }\n    const pos = new Map();\n    for (const [coluna, lista] of porColuna) {\n        lista.forEach((nome, i) => {\n            pos.set(nome, [ORIGEM_X + coluna * PASSO_X, ORIGEM_Y + i * PASSO_Y]);\n        });\n    }\n    return pos;\n}\n/** Escapa HTML para evitar injeção a partir de conteúdo da LLM. */\nfunction escaparHtml(s) {\n    return String(s ?? '')\n        .replace(/&/g, '&amp;')\n        .replace(/</g, '&lt;')\n        .replace(/>/g, '&gt;')\n        .replace(/\"/g, '&quot;')\n        .replace(/'/g, '&#39;');\n}\n/** Nome \"amigável\" do tipo (última parte após o ponto). */\nfunction tipoCurto(type) {\n    const p = type.split('.');\n    return p[p.length - 1] || type;\n}\n/** Monta as sequências \"A → B → C\" seguindo as conexões a partir das raízes. */\nfunction montarSequencias(nodes, connections) {\n    const nomes = nodes.map((n) => n.name);\n    const temEntrada = new Set();\n    for (const origem of Object.keys(connections)) {\n        for (const porta of connections[origem]?.main ?? []) {\n            for (const alvo of porta ?? [])\n                if (alvo?.node)\n                    temEntrada.add(alvo.node);\n        }\n    }\n    const raizes = nomes.filter((n) => !temEntrada.has(n));\n    const sequencias = [];\n    const visitar = (atual, caminho) => {\n        const novoCaminho = [...caminho, atual];\n        const saidas = connections[atual]?.main ?? [];\n        const alvos = [];\n        for (const porta of saidas) {\n            for (const alvo of porta ?? [])\n                if (alvo?.node)\n                    alvos.push(alvo.node);\n        }\n        if (alvos.length === 0) {\n            sequencias.push(novoCaminho.join(' → '));\n            return;\n        }\n        // evita loop infinito: não revisita nó já no caminho\n        for (const alvo of alvos) {\n            if (novoCaminho.includes(alvo)) {\n                sequencias.push([...novoCaminho, `${alvo} (↩ volta)`].join(' → '));\n            }\n            else {\n                visitar(alvo, novoCaminho);\n            }\n        }\n    };\n    for (const r of raizes.length ? raizes : nomes.slice(0, 1))\n        visitar(r, []);\n    return sequencias;\n}\nfunction gerarPreviewHtml(wf, opcoes = {}) {\n    const linhas = wf.nodes\n        .map((n) => `<tr><td>${escaparHtml(n.name)}</td><td>${escaparHtml(tipoCurto(n.type))}</td></tr>`)\n        .join('');\n    const sequencias = montarSequencias(wf.nodes, wf.connections)\n        .map((s) => `<li>${escaparHtml(s)}</li>`)\n        .join('');\n    const avisosHtml = opcoes.avisos && opcoes.avisos.length\n        ? `<div><strong>Avisos:</strong><ul>${opcoes.avisos\n            .map((a) => `<li>${escaparHtml(a)}</li>`)\n            .join('')}</ul></div>`\n        : '';\n    const rodadaHtml = opcoes.rodada\n        ? `<p><em>Rodada ${escaparHtml(opcoes.rodada)}</em></p>`\n        : '';\n    return [\n        '<div>',\n        `<h2>Pré-visualização: ${escaparHtml(wf.name)}</h2>`,\n        rodadaHtml,\n        `<p>${escaparHtml(wf.nodes.length)} nó(s).</p>`,\n        '<h3>Nós</h3>',\n        '<table border=\"1\" cellpadding=\"4\" cellspacing=\"0\">',\n        '<tr><td><strong>Nó</strong></td><td><strong>Tipo</strong></td></tr>',\n        linhas,\n        '</table>',\n        '<h3>Fluxo</h3>',\n        `<ul>${sequencias}</ul>`,\n        avisosHtml,\n        '</div>',\n    ]\n        .filter(Boolean)\n        .join('\\n');\n}\n\n\n// --- entrada ---\n// Trecho de entrada do Code node \"Pré-visualização\" (Run Once for All Items).\n// Depende de: gerarPreviewHtml (lib embutida).\n// Entrada: $json com { workflow, tentativa/rodada, avisos }\n// Saída: { previewHtml, workflow }\n\nconst item = $input.first().json;\nconst workflow = item.workflow;\nif (!workflow) {\n  return [{ json: { previewHtml: '<div><h2>Sem workflow para pré-visualizar.</h2></div>', workflow: null } }];\n}\n// A rodada vem do estado do Criador (Nova Rodada tem prioridade sobre Estado).\n// Em uso isolado (fora do Criador), cai para o campo do próprio item.\nlet rodada = item.rodada || item.tentativa || 1;\ntry { rodada = $('Nova Rodada').last().json.rodada || rodada; }\ncatch (e) {\n  try { rodada = $('Estado').last().json.rodada || rodada; } catch (e2) { /* uso isolado */ }\n}\nconst avisos = Array.isArray(item.avisos) ? item.avisos : [];\nconst previewHtml = gerarPreviewHtml(\n  { name: workflow.name, nodes: workflow.nodes, connections: workflow.connections },\n  { rodada, avisos },\n);\nreturn [{ json: { previewHtml, workflow } }];\n"
+      }
+    },
+    {
+      "id": "c-revisao",
+      "name": "Revisão do Fluxo",
+      "webhookId": "criador-revisao",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        600,
+        200
+      ],
+      "parameters": {
+        "operation": "page",
+        "formFields": {
+          "values": [
+            {
+              "fieldType": "html",
+              "elementName": "previa",
+              "html": "={{ $json.previewHtml }}"
+            },
+            {
+              "fieldLabel": "Decisão",
+              "fieldType": "radio",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Aprovar e criar"
+                  },
+                  {
+                    "option": "Ajustar"
+                  },
+                  {
+                    "option": "Cancelar"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Feedback para ajuste (opcional)",
+              "fieldType": "textarea",
+              "requiredField": false
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c-decisao",
+      "name": "Decisão",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        840,
+        200
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d-apr",
+                    "leftValue": "={{ $json.Decisão }}",
+                    "rightValue": "Aprovar e criar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "Aprovar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d-aju",
+                    "leftValue": "={{ $json.Decisão }}",
+                    "rightValue": "Ajustar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "Ajustar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d-can",
+                    "leftValue": "={{ $json.Decisão }}",
+                    "rightValue": "Cancelar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "Cancelar"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c-criar",
+      "name": "Criar Workflow",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "onError": "continueErrorOutput",
+      "position": [
+        1100,
+        80
+      ],
+      "parameters": {
+        "resource": "workflow",
+        "operation": "create",
+        "workflowObject": "={{ JSON.stringify($('Pré-visualização').item.json.workflow) }}"
+      },
+      "credentials": {
+        "n8nApi": {
+          "id": "zPHhe6041tVgW8cW",
+          "name": "n8n API (local)"
+        }
+      }
+    },
+    {
+      "id": "c-publicar",
+      "name": "Publicar Fluxo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "onError": "continueRegularOutput",
+      "position": [
+        1360,
+        80
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=http://localhost:5678/api/v1/workflows/{{ $json.id }}/activate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CnzccGtjrK0oSWao",
+          "name": "n8n API Header"
+        }
+      }
+    },
+    {
+      "id": "c-fim-sucesso",
+      "name": "Fim: Sucesso",
+      "webhookId": "criador-fim-sucesso",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1620,
+        0
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<h2>✅ Fluxo criado e publicado!</h2><p>O workflow <strong>{{ $('Criar Workflow').item.json.name }}</strong> foi criado com {{ ($('Criar Workflow').item.json.nodes || []).length }} nó(s) e já está ativo.</p><p><a href=\"http://localhost:5678/workflow/{{ $('Criar Workflow').item.json.id }}\">Abrir no editor</a></p>",
+        "options": {}
+      }
+    },
+    {
+      "id": "c-nova-rodada",
+      "name": "Nova Rodada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1100,
+        320
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nr-nome",
+              "name": "nomeFluxo",
+              "value": "={{ $('Estado').item.json.nomeFluxo }}",
+              "type": "string"
+            },
+            {
+              "id": "nr-gat",
+              "name": "gatilho",
+              "value": "={{ $('Estado').item.json.gatilho }}",
+              "type": "string"
+            },
+            {
+              "id": "nr-aco",
+              "name": "acoes",
+              "value": "={{ $('Estado').item.json.acoes }}",
+              "type": "string"
+            },
+            {
+              "id": "nr-det",
+              "name": "detalhes",
+              "value": "={{ $('Estado').item.json.detalhes }}",
+              "type": "string"
+            },
+            {
+              "id": "nr-fb",
+              "name": "feedback",
+              "value": "={{ $('Revisão do Fluxo').item.json['Feedback para ajuste (opcional)'] || 'Ajuste o fluxo.' }}",
+              "type": "string"
+            },
+            {
+              "id": "nr-err",
+              "name": "errosAnteriores",
+              "value": "={{ [] }}",
+              "type": "array"
+            },
+            {
+              "id": "nr-rod",
+              "name": "rodada",
+              "value": "={{ $('Estado').item.json.rodada + 1 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c-if-limite",
+      "name": "Dentro do limite?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1340,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "lim",
+              "leftValue": "={{ $json.rodada }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c-fim-limite",
+      "name": "Fim: Limite",
+      "webhookId": "criador-fim-limite",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1580,
+        420
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "<h2>Limite de ajustes atingido</h2><p>Foram feitas 3 rodadas. Inicie um novo pedido para continuar.</p>",
+        "options": {}
+      }
+    },
+    {
+      "id": "c-fim-falha",
+      "name": "Fim: Falha",
+      "webhookId": "criador-fim-falha",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        360,
+        460
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<h2>Não foi possível gerar o fluxo</h2><p>{{ $json.motivo || ($json.erros || []).join(\"; \") }}</p>",
+        "options": {}
+      }
+    },
+    {
+      "id": "c-fim-cancelado",
+      "name": "Fim: Cancelado",
+      "webhookId": "criador-fim-cancelado",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1100,
+        560
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "<h2>Operação cancelada</h2><p>Nenhum fluxo foi criado.</p>",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Solicitar Automação": {
+      "main": [
+        [
+          {
+            "node": "Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado": {
+      "main": [
+        [
+          {
+            "node": "Chamar Núcleo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar Núcleo": {
+      "main": [
+        [
+          {
+            "node": "Gerou com sucesso?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerou com sucesso?": {
+      "main": [
+        [
+          {
+            "node": "Pré-visualização",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fim: Falha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pré-visualização": {
+      "main": [
+        [
+          {
+            "node": "Revisão do Fluxo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revisão do Fluxo": {
+      "main": [
+        [
+          {
+            "node": "Decisão",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decisão": {
+      "main": [
+        [
+          {
+            "node": "Criar Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nova Rodada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fim: Cancelado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Workflow": {
+      "main": [
+        [
+          {
+            "node": "Publicar Fluxo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nova Rodada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publicar Fluxo": {
+      "main": [
+        [
+          {
+            "node": "Fim: Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nova Rodada": {
+      "main": [
+        [
+          {
+            "node": "Dentro do limite?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dentro do limite?": {
+      "main": [
+        [
+          {
+            "node": "Chamar Núcleo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fim: Limite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": true,
+  "staticData": null
+}

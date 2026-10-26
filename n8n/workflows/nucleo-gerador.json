@@ -1,0 +1,567 @@
+{
+  "id": "EOUGKEns1rkLk9fJ",
+  "name": "[Meta] Núcleo Gerador",
+  "nodes": [
+    {
+      "id": "n-sub-trigger",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -400,
+        100
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "nomeFluxo",
+              "type": "string"
+            },
+            {
+              "name": "gatilho",
+              "type": "string"
+            },
+            {
+              "name": "acoes",
+              "type": "string"
+            },
+            {
+              "name": "detalhes",
+              "type": "string"
+            },
+            {
+              "name": "feedback",
+              "type": "string"
+            },
+            {
+              "name": "errosAnteriores",
+              "type": "array"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "n-webhook",
+      "name": "Webhook Dry-Run",
+      "webhookId": "meta-gerador-dry-run",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -400,
+        320
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meta-gerador-dry-run",
+        "responseMode": "lastNode",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "kj0IomdZK17Zzin0",
+          "name": "Dry-Run Header"
+        }
+      }
+    },
+    {
+      "id": "n-normalizar",
+      "name": "Normalizar Entrada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -140,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-nome",
+              "name": "nomeFluxo",
+              "value": "={{ $json.body?.nomeFluxo ?? $json.nomeFluxo }}",
+              "type": "string"
+            },
+            {
+              "id": "a-gat",
+              "name": "gatilho",
+              "value": "={{ $json.body?.gatilho ?? $json.gatilho }}",
+              "type": "string"
+            },
+            {
+              "id": "a-aco",
+              "name": "acoes",
+              "value": "={{ $json.body?.acoes ?? $json.acoes }}",
+              "type": "string"
+            },
+            {
+              "id": "a-det",
+              "name": "detalhes",
+              "value": "={{ $json.body?.detalhes ?? $json.detalhes ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "a-fb",
+              "name": "feedback",
+              "value": "={{ $json.body?.feedback ?? $json.feedback ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "a-err",
+              "name": "errosAnteriores",
+              "value": "={{ $json.body?.errosAnteriores ?? $json.errosAnteriores ?? [] }}",
+              "type": "array"
+            },
+            {
+              "id": "a-tent",
+              "name": "tentativa",
+              "value": "={{ $json.body?.tentativa ?? $json.tentativa ?? 1 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-montar",
+      "name": "Montar Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== ARQUIVO GERADO por scripts/n8n/build-code-nodes.ts — não edite à mão =====\n// Code node (Run Once for All Items). Sem require/process/$env.\n\nconst CATALOGO = [\n  {\n    \"type\": \"n8n-nodes-base.manualTrigger\",\n    \"typeVersion\": 1,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Inicia o fluxo manualmente ao clicar em Executar. Útil para testes.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.scheduleTrigger\",\n    \"typeVersion\": 1.4,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Dispara o fluxo em intervalos de tempo (cron/intervalo).\",\n    \"obrigatorios\": [\n      \"rule\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.webhook\",\n    \"typeVersion\": 2.2,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Recebe requisições HTTP para iniciar o fluxo. Define método e caminho.\",\n    \"obrigatorios\": [\n      \"httpMethod\",\n      \"path\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.formTrigger\",\n    \"typeVersion\": 2.6,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Gera um formulário web que inicia o fluxo ao ser enviado.\",\n    \"obrigatorios\": [\n      \"formTitle\",\n      \"formFields\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.gmailTrigger\",\n    \"typeVersion\": 1.4,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Dispara o fluxo quando um novo e-mail chega no Gmail.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.telegramTrigger\",\n    \"typeVersion\": 1.5,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Dispara o fluxo ao receber uma mensagem no bot do Telegram.\",\n    \"obrigatorios\": [\n      \"updates\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.httpRequest\",\n    \"typeVersion\": 4.5,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Faz requisições HTTP a APIs externas (GET, POST, etc.).\",\n    \"obrigatorios\": [\n      \"url\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.set\",\n    \"typeVersion\": 3.5,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Define ou transforma campos dos itens que passam pelo fluxo.\",\n    \"obrigatorios\": [\n      \"assignments\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.if\",\n    \"typeVersion\": 2.3,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Ramifica o fluxo em duas saídas (true/false) conforme condições.\",\n    \"obrigatorios\": [\n      \"conditions\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.switch\",\n    \"typeVersion\": 3.4,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Ramifica o fluxo em múltiplas saídas conforme regras.\",\n    \"obrigatorios\": [\n      \"rules\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.code\",\n    \"typeVersion\": 2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Executa JavaScript para transformar dados (sem acesso a $env, require ou rede).\",\n    \"obrigatorios\": [\n      \"jsCode\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.merge\",\n    \"typeVersion\": 3.2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Combina dados de múltiplas entradas em uma saída.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.wait\",\n    \"typeVersion\": 1.1,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Pausa o fluxo por um tempo ou até um evento (webhook).\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.filter\",\n    \"typeVersion\": 2.3,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Mantém apenas os itens que satisfazem as condições.\",\n    \"obrigatorios\": [\n      \"conditions\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.splitOut\",\n    \"typeVersion\": 1.1,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Separa uma lista dentro de um item em vários itens.\",\n    \"obrigatorios\": [\n      \"fieldToSplitOut\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.aggregate\",\n    \"typeVersion\": 1,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Agrega vários itens em um só (ex.: junta campos em uma lista).\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.respondToWebhook\",\n    \"typeVersion\": 1.5,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Envia a resposta HTTP para um Webhook que iniciou o fluxo.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.noOp\",\n    \"typeVersion\": 1,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Não faz nada; útil como ponto de junção ou marcador.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.gmail\",\n    \"typeVersion\": 2.2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Envia e gerencia e-mails no Gmail.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.slack\",\n    \"typeVersion\": 2.7,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Envia mensagens e interage com o Slack.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.telegram\",\n    \"typeVersion\": 1.2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Envia mensagens pelo bot do Telegram.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.googleSheets\",\n    \"typeVersion\": 4.7,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Lê e escreve dados em planilhas do Google Sheets.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.airtable\",\n    \"typeVersion\": 2.2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Lê e escreve registros no Airtable.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.form\",\n    \"typeVersion\": 2.5,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Página de formulário adicional ou tela final (Form Ending). Requer um Form Trigger no início.\",\n    \"obrigatorios\": [\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"@n8n/n8n-nodes-langchain.chainLlm\",\n    \"typeVersion\": 1.9,\n    \"categoria\": \"ia\",\n    \"descricao\": \"Nó de IA que envia um prompt a um modelo de linguagem e devolve a resposta em texto. Exige um nó de modelo (Gemini Chat Model) conectado na porta ai_languageModel. Use para avaliar/decidir em linguagem natural (ex.: validar regras de negócio). Responde em $json.text.\",\n    \"obrigatorios\": [\n      \"text\"\n    ]\n  },\n  {\n    \"type\": \"@n8n/n8n-nodes-langchain.lmChatOpenAi\",\n    \"typeVersion\": 1.3,\n    \"categoria\": \"ia\",\n    \"descricao\": \"Modelo de linguagem OpenAI. É um sub-nó: conecta-se SEMPRE na porta ai_languageModel de um Basic LLM Chain (nunca por main). A credencial é configurada automaticamente.\",\n    \"obrigatorios\": []\n  }\n];\n\n// --- libs ---\nconst LIMITE_USER_PROMPT = 8000;\n/** Renderiza o catálogo de forma compacta: \"- tipo (vX) [gatilho|ação]: descrição. Obrigatórios: a, b\". */\nfunction renderizarCatalogo(nos) {\n    return nos\n        .map((n) => {\n        const cat = n.categoria === 'gatilho' ? 'gatilho' : 'ação';\n        const obr = n.obrigatorios.length ? ` Obrigatórios: ${n.obrigatorios.join(', ')}.` : '';\n        return `- ${n.type} (v${n.typeVersion}) [${cat}]: ${n.descricao}${obr}`;\n    })\n        .join('\\n');\n}\nfunction montarSystemPrompt(nos) {\n    return [\n        'Você é um arquiteto especialista em automações n8n.',\n        'Sua tarefa é gerar o JSON de um workflow do n8n a partir da solicitação do usuário.',\n        '',\n        'REGRAS ESTRITAS:',\n        '1. Responda APENAS com um objeto JSON válido. Nada de texto antes ou depois, nada de comentários.',\n        '2. O objeto deve ter exatamente as chaves \"nodes\" (array) e \"connections\" (objeto).',\n        '3. Cada nó tem: \"name\" (único, descritivo em português), \"type\" e \"parameters\".',\n        '   NÃO inclua \"id\", \"position\", \"typeVersion\", \"active\", \"tags\" nem \"credentials\" — o sistema cuida disso.',\n        '4. Use SOMENTE os tipos de nó da lista abaixo. Qualquer outro tipo será rejeitado.',\n        '5. O workflow DEVE ter ao menos um nó de gatilho.',\n        '6. As conexões usam o NOME do nó, no formato:',\n        '   { \"Nó A\": { \"main\": [[{ \"node\": \"Nó B\", \"type\": \"main\", \"index\": 0 }]] } }',\n        '   Para nós If, use DUAS saídas no array main: main[0] = ramo verdadeiro, main[1] = ramo falso.',\n        '   Ex.: { \"Decidir\": { \"main\": [[{ \"node\": \"SeVerdadeiro\", \"type\": \"main\", \"index\": 0 }], [{ \"node\": \"SeFalso\", \"type\": \"main\", \"index\": 0 }]] } }',\n        '   NUNCA use portas chamadas \"true\"/\"false\"; o If usa apenas o array \"main\" com dois índices.',\n        '7. Preencha os parâmetros obrigatórios de cada nó.',\n        '8. Não inclua credenciais nem segredos. A credencial do OpenAI Chat Model é anexada automaticamente pelo sistema.',\n        '9. Se a solicitação NÃO for uma automação viável com estes nós, responda apenas:',\n        '   { \"impossivel\": true, \"motivo\": \"<explicação curta em português>\" }',\n        '',\n        'NÓS PERMITIDOS:',\n        renderizarCatalogo(nos),\n        '',\n        'PADRÕES OBRIGATÓRIOS (use quando aplicável):',\n        '- IA no meio do processo: para avaliar/decidir em linguagem natural, use um \"Basic LLM Chain\"',\n        '  (@n8n/n8n-nodes-langchain.chainLlm). Ele PRECISA de um \"OpenAI Chat Model\"',\n        '  (@n8n/n8n-nodes-langchain.lmChatOpenAi) conectado pela porta \"ai_languageModel\":',\n        '  { \"OpenAI Chat Model\": { \"ai_languageModel\": [[{ \"node\": \"Avaliar\", \"type\": \"ai_languageModel\", \"index\": 0 }]] } }',\n        '  O OpenAI Chat Model NÃO entra no fluxo principal (sem conexão main). A resposta da chain fica em {{ $json.text }}.',\n        '  SEMPRE inclua o OpenAI Chat Model no array de nós E a conexão ai_languageModel para a chain. Sem o modelo, a chain falha.',\n        '  Peça à chain para responder em JSON (ex.: {\"aprovado\":true/false,\"motivo\":\"...\"}) e, logo depois, use um Code node',\n        '  para ler JSON.parse($json.text) e um If/Switch para ramificar (aprovado vs reprovado).',\n        '- Base de dados (planilha) para TESTE sem Google Drive: crie um Code node \"Base (CSV)\" que retorna os dados',\n        '  embutidos como objeto com as abas, ex.: return [{ json: { colaboradores: [...], ferias: [...] } }];',\n        '  (depois esse nó será trocado pelo Google Sheets/Drive, mantendo os mesmos campos).',\n        '- E-mail (sem Gmail conectado agora): represente o envio com um Code node que apenas registra a mensagem,',\n        '  ex.: return [{ json: { emailSimulado: true, para: \"...\", assunto: \"...\", corpo: \"...\" } }];',\n        '- Aprovação humana (gestor): use um nó \"n8n Form (página)\" (operation \"page\") para o gestor decidir,',\n        '  com um campo radio Aprovar/Reprovar. O fluxo deve iniciar com um \"n8n Form Trigger\".',\n        '- Erros/respostas ao usuário: use \"n8n Form (página)\" com operation \"completion\" e respondWith \"showText\".',\n        '- TODO nó (exceto o gatilho e o OpenAI Chat Model) deve estar conectado ao fluxo. Não deixe nós soltos.',\n        '  Se criar uma \"Página de Erro\", ligue-a a partir de um If/Switch que decide entre seguir ou mostrar o erro.',\n        '',\n        'EXEMPLO de resposta válida (mínima):',\n        '{',\n        '  \"nodes\": [',\n        '    { \"name\": \"Início\", \"type\": \"n8n-nodes-base.manualTrigger\", \"parameters\": {} },',\n        '    { \"name\": \"Definir dados\", \"type\": \"n8n-nodes-base.set\", \"parameters\": { \"assignments\": { \"assignments\": [] }, \"options\": {} } }',\n        '  ],',\n        '  \"connections\": { \"Início\": { \"main\": [[{ \"node\": \"Definir dados\", \"type\": \"main\", \"index\": 0 }]] } }',\n        '}',\n        '',\n        'EXEMPLO COMPLETO do bloco de IA (copie este padrão quando usar IA — note o OpenAI Chat Model',\n        'no array de nós E a conexão ai_languageModel ligando-o à chain):',\n        '{',\n        '  \"nodes\": [',\n        '    { \"name\": \"Formulário\", \"type\": \"n8n-nodes-base.formTrigger\", \"parameters\": { \"formTitle\": \"X\", \"formFields\": { \"values\": [{ \"fieldLabel\": \"Texto\", \"fieldType\": \"text\" }] } } },',\n        '    { \"name\": \"Avaliar\", \"type\": \"@n8n/n8n-nodes-langchain.chainLlm\", \"parameters\": { \"promptType\": \"define\", \"text\": \"Avalie a solicitacao e responda em JSON com aprovado e motivo.\", \"hasOutputParser\": false } },',\n        '    { \"name\": \"Modelo\", \"type\": \"@n8n/n8n-nodes-langchain.lmChatOpenAi\", \"parameters\": { \"model\": \"gpt-4o-mini\", \"options\": {} } },',\n        '    { \"name\": \"Decidir\", \"type\": \"n8n-nodes-base.code\", \"parameters\": { \"jsCode\": \"return [{ json: { ok: true } }];\" } },',\n        '    { \"name\": \"Rota\", \"type\": \"n8n-nodes-base.if\", \"parameters\": { \"conditions\": { \"options\": { \"version\": 2 }, \"combinator\": \"and\", \"conditions\": [{ \"leftValue\": \"={{ $json.aprovado }}\", \"rightValue\": true, \"operator\": { \"type\": \"boolean\", \"operation\": \"true\", \"singleValue\": true } }] } } }',\n        '  ],',\n        '  \"connections\": {',\n        '    \"Formulário\": { \"main\": [[{ \"node\": \"Avaliar\", \"type\": \"main\", \"index\": 0 }]] },',\n        '    \"Modelo\": { \"ai_languageModel\": [[{ \"node\": \"Avaliar\", \"type\": \"ai_languageModel\", \"index\": 0 }]] },',\n        '    \"Avaliar\": { \"main\": [[{ \"node\": \"Decidir\", \"type\": \"main\", \"index\": 0 }]] },',\n        '    \"Decidir\": { \"main\": [[{ \"node\": \"Rota\", \"type\": \"main\", \"index\": 0 }]] }',\n        '  }',\n        '}',\n    ].join('\\n');\n}\nfunction montarUserPrompt(estado) {\n    const partes = [];\n    partes.push(`Nome desejado do fluxo: ${estado.nomeFluxo}`);\n    if (estado.gatilho)\n        partes.push(`Gatilho inicial desejado: ${estado.gatilho}`);\n    partes.push(`Ações esperadas: ${estado.acoes}`);\n    if (estado.detalhes && estado.detalhes.trim()) {\n        partes.push(`Detalhes adicionais: ${estado.detalhes.trim()}`);\n    }\n    if (estado.feedback && estado.feedback.trim()) {\n        partes.push('');\n        partes.push(`Feedback humano para ajustar o fluxo: ${estado.feedback.trim()}`);\n    }\n    if (estado.errosAnteriores && estado.errosAnteriores.length > 0) {\n        partes.push('');\n        partes.push('Erros da tentativa anterior (corrija todos):');\n        for (const e of estado.errosAnteriores)\n            partes.push(`- ${e}`);\n    }\n    partes.push('');\n    partes.push('Gere agora o JSON do workflow seguindo todas as regras.');\n    let texto = partes.join('\\n');\n    if (texto.length > LIMITE_USER_PROMPT) {\n        texto = texto.slice(0, LIMITE_USER_PROMPT) + '\\n[...truncado...]';\n    }\n    return texto;\n}\nfunction montarPrompts(estado, nos) {\n    return {\n        systemPrompt: montarSystemPrompt(nos),\n        userPrompt: montarUserPrompt(estado),\n    };\n}\n\n\n// --- entrada ---\n// Trecho de entrada do Code node \"Montar Prompt\" (modo Run Once for All Items).\n// Depende de: CATALOGO (constante embutida), montarPrompts (lib embutida).\n// Entrada: $json com { nomeFluxo, gatilho, acoes, detalhes, feedback, errosAnteriores, tentativa }\n// Saída: o mesmo estado + { systemPrompt, userPrompt }\n\nconst estado = $input.first().json;\nconst nosPrompt = CATALOGO.map((n) => ({\n  type: n.type,\n  typeVersion: n.typeVersion,\n  categoria: n.categoria,\n  descricao: n.descricao,\n  obrigatorios: n.obrigatorios,\n}));\nconst prompts = montarPrompts(\n  {\n    nomeFluxo: estado.nomeFluxo,\n    gatilho: estado.gatilho,\n    acoes: estado.acoes,\n    detalhes: estado.detalhes,\n    feedback: estado.feedback,\n    errosAnteriores: Array.isArray(estado.errosAnteriores) ? estado.errosAnteriores : [],\n  },\n  nosPrompt,\n);\nreturn [{ json: Object.assign({}, estado, prompts) }];\n"
+      }
+    },
+    {
+      "id": "n-chain",
+      "name": "Gerar JSON (LLM)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "position": [
+        380,
+        200
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.userPrompt }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "={{ $json.systemPrompt }}"
+            }
+          ]
+        },
+        "hasOutputParser": false
+      }
+    },
+    {
+      "id": "n-openai",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        380,
+        420
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "xx5KZ3u8XHEEQtpY",
+          "name": "OpenAI Meta-Fluxo"
+        }
+      }
+    },
+    {
+      "id": "n-validar",
+      "name": "Validar e Sanitizar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ===== ARQUIVO GERADO por scripts/n8n/build-code-nodes.ts — não edite à mão =====\n// Code node (Run Once for All Items). Sem require/process/$env.\n\nconst CATALOGO = [\n  {\n    \"type\": \"n8n-nodes-base.manualTrigger\",\n    \"typeVersion\": 1,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Inicia o fluxo manualmente ao clicar em Executar. Útil para testes.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.scheduleTrigger\",\n    \"typeVersion\": 1.4,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Dispara o fluxo em intervalos de tempo (cron/intervalo).\",\n    \"obrigatorios\": [\n      \"rule\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.webhook\",\n    \"typeVersion\": 2.2,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Recebe requisições HTTP para iniciar o fluxo. Define método e caminho.\",\n    \"obrigatorios\": [\n      \"httpMethod\",\n      \"path\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.formTrigger\",\n    \"typeVersion\": 2.6,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Gera um formulário web que inicia o fluxo ao ser enviado.\",\n    \"obrigatorios\": [\n      \"formTitle\",\n      \"formFields\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.gmailTrigger\",\n    \"typeVersion\": 1.4,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Dispara o fluxo quando um novo e-mail chega no Gmail.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.telegramTrigger\",\n    \"typeVersion\": 1.5,\n    \"categoria\": \"gatilho\",\n    \"descricao\": \"Dispara o fluxo ao receber uma mensagem no bot do Telegram.\",\n    \"obrigatorios\": [\n      \"updates\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.httpRequest\",\n    \"typeVersion\": 4.5,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Faz requisições HTTP a APIs externas (GET, POST, etc.).\",\n    \"obrigatorios\": [\n      \"url\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.set\",\n    \"typeVersion\": 3.5,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Define ou transforma campos dos itens que passam pelo fluxo.\",\n    \"obrigatorios\": [\n      \"assignments\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.if\",\n    \"typeVersion\": 2.3,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Ramifica o fluxo em duas saídas (true/false) conforme condições.\",\n    \"obrigatorios\": [\n      \"conditions\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.switch\",\n    \"typeVersion\": 3.4,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Ramifica o fluxo em múltiplas saídas conforme regras.\",\n    \"obrigatorios\": [\n      \"rules\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.code\",\n    \"typeVersion\": 2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Executa JavaScript para transformar dados (sem acesso a $env, require ou rede).\",\n    \"obrigatorios\": [\n      \"jsCode\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.merge\",\n    \"typeVersion\": 3.2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Combina dados de múltiplas entradas em uma saída.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.wait\",\n    \"typeVersion\": 1.1,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Pausa o fluxo por um tempo ou até um evento (webhook).\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.filter\",\n    \"typeVersion\": 2.3,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Mantém apenas os itens que satisfazem as condições.\",\n    \"obrigatorios\": [\n      \"conditions\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.splitOut\",\n    \"typeVersion\": 1.1,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Separa uma lista dentro de um item em vários itens.\",\n    \"obrigatorios\": [\n      \"fieldToSplitOut\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.aggregate\",\n    \"typeVersion\": 1,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Agrega vários itens em um só (ex.: junta campos em uma lista).\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.respondToWebhook\",\n    \"typeVersion\": 1.5,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Envia a resposta HTTP para um Webhook que iniciou o fluxo.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.noOp\",\n    \"typeVersion\": 1,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Não faz nada; útil como ponto de junção ou marcador.\",\n    \"obrigatorios\": []\n  },\n  {\n    \"type\": \"n8n-nodes-base.gmail\",\n    \"typeVersion\": 2.2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Envia e gerencia e-mails no Gmail.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.slack\",\n    \"typeVersion\": 2.7,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Envia mensagens e interage com o Slack.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.telegram\",\n    \"typeVersion\": 1.2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Envia mensagens pelo bot do Telegram.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.googleSheets\",\n    \"typeVersion\": 4.7,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Lê e escreve dados em planilhas do Google Sheets.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.airtable\",\n    \"typeVersion\": 2.2,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Lê e escreve registros no Airtable.\",\n    \"obrigatorios\": [\n      \"resource\",\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"n8n-nodes-base.form\",\n    \"typeVersion\": 2.5,\n    \"categoria\": \"acao\",\n    \"descricao\": \"Página de formulário adicional ou tela final (Form Ending). Requer um Form Trigger no início.\",\n    \"obrigatorios\": [\n      \"operation\"\n    ]\n  },\n  {\n    \"type\": \"@n8n/n8n-nodes-langchain.chainLlm\",\n    \"typeVersion\": 1.9,\n    \"categoria\": \"ia\",\n    \"descricao\": \"Nó de IA que envia um prompt a um modelo de linguagem e devolve a resposta em texto. Exige um nó de modelo (Gemini Chat Model) conectado na porta ai_languageModel. Use para avaliar/decidir em linguagem natural (ex.: validar regras de negócio). Responde em $json.text.\",\n    \"obrigatorios\": [\n      \"text\"\n    ]\n  },\n  {\n    \"type\": \"@n8n/n8n-nodes-langchain.lmChatOpenAi\",\n    \"typeVersion\": 1.3,\n    \"categoria\": \"ia\",\n    \"descricao\": \"Modelo de linguagem OpenAI. É um sub-nó: conecta-se SEMPRE na porta ai_languageModel de um Basic LLM Chain (nunca por main). A credencial é configurada automaticamente.\",\n    \"obrigatorios\": []\n  }\n];\n\nconst CRED_IA = {\"tipo\":\"openAiApi\",\"id\":\"xx5KZ3u8XHEEQtpY\",\"name\":\"OpenAI Meta-Fluxo\"};\n\n// --- libs ---\n/**\n * Gera UUID v4. Implementação própria, sem depender de `crypto` (bloqueado no\n * Code node do n8n em task runner). Usa Math.random — suficiente para IDs de nós.\n */\nfunction uuidV4() {\n    const hex = '0123456789abcdef';\n    let s = '';\n    for (let i = 0; i < 36; i++) {\n        if (i === 8 || i === 13 || i === 18 || i === 23) {\n            s += '-';\n        }\n        else if (i === 14) {\n            s += '4';\n        }\n        else if (i === 19) {\n            s += hex[(Math.floor(Math.random() * 16) & 0x3) | 0x8];\n        }\n        else {\n            s += hex[Math.floor(Math.random() * 16)];\n        }\n    }\n    return s;\n}\nconst PASSO_X = 260;\nconst PASSO_Y = 160;\nconst ORIGEM_X = 0;\nconst ORIGEM_Y = 300;\n/** Nós sem nenhuma conexão de entrada (candidatos a raiz). */\nfunction semEntrada(nomes, connections) {\n    const temEntrada = new Set();\n    for (const origem of Object.keys(connections)) {\n        const saidas = connections[origem]?.main ?? [];\n        for (const porta of saidas) {\n            for (const alvo of porta ?? []) {\n                if (alvo?.node)\n                    temEntrada.add(alvo.node);\n            }\n        }\n    }\n    return nomes.filter((n) => !temEntrada.has(n));\n}\n/** Calcula a profundidade (coluna) de cada nó por BFS a partir das raízes. */\nfunction calcularProfundidades(nomes, connections) {\n    const prof = new Map();\n    let raizes = semEntrada(nomes, connections);\n    if (raizes.length === 0 && nomes.length > 0)\n        raizes = [nomes[0]]; // ciclo sem raiz\n    const fila = raizes.map((n) => ({ node: n, d: 0 }));\n    for (const r of raizes)\n        prof.set(r, 0);\n    let guard = 0;\n    const maxIter = nomes.length * nomes.length + 10;\n    while (fila.length > 0 && guard++ < maxIter) {\n        const { node, d } = fila.shift();\n        const saidas = connections[node]?.main ?? [];\n        for (const porta of saidas) {\n            for (const alvo of porta ?? []) {\n                const nome = alvo?.node;\n                if (!nome)\n                    continue;\n                const atual = prof.get(nome);\n                if (atual === undefined || d + 1 > atual) {\n                    prof.set(nome, d + 1);\n                    fila.push({ node: nome, d: d + 1 });\n                }\n            }\n        }\n    }\n    // nós não alcançados (desconectados) ficam na coluna 0\n    for (const n of nomes)\n        if (!prof.has(n))\n            prof.set(n, 0);\n    return prof;\n}\n/**\n * Retorna um mapa nome -> [x, y]. Nós na mesma coluna são empilhados\n * verticalmente de forma determinística (ordem de `nomes`).\n */\nfunction calcularPosicoes(nomes, connections) {\n    const prof = calcularProfundidades(nomes, connections);\n    const porColuna = new Map();\n    for (const n of nomes) {\n        const c = prof.get(n) ?? 0;\n        if (!porColuna.has(c))\n            porColuna.set(c, []);\n        porColuna.get(c).push(n);\n    }\n    const pos = new Map();\n    for (const [coluna, lista] of porColuna) {\n        lista.forEach((nome, i) => {\n            pos.set(nome, [ORIGEM_X + coluna * PASSO_X, ORIGEM_Y + i * PASSO_Y]);\n        });\n    }\n    return pos;\n}\nconst CAMPOS_PROIBIDOS = ['id', 'active', 'tags', 'pinData', 'versionId', 'meta', 'staticData', 'createdAt', 'updatedAt'];\n/** Extrai o primeiro objeto JSON de um texto (tolera cercas ```json e ruído). */\nfunction extrairJson(texto) {\n    if (texto == null)\n        return { obj: null, erro: 'Resposta vazia da LLM.' };\n    let t = String(texto).trim();\n    // Remove cercas de código ```json ... ``` ou ``` ... ```\n    const cerca = t.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);\n    if (cerca)\n        t = cerca[1].trim();\n    // Tenta direto\n    try {\n        return { obj: JSON.parse(t) };\n    }\n    catch {\n        // Procura o primeiro { ... } balanceado\n    }\n    const inicio = t.indexOf('{');\n    if (inicio === -1)\n        return { obj: null, erro: 'Nenhum objeto JSON encontrado na resposta.' };\n    let nivel = 0;\n    let emString = false;\n    let escape = false;\n    for (let i = inicio; i < t.length; i++) {\n        const c = t[i];\n        if (emString) {\n            if (escape)\n                escape = false;\n            else if (c === '\\\\')\n                escape = true;\n            else if (c === '\"')\n                emString = false;\n            continue;\n        }\n        if (c === '\"')\n            emString = true;\n        else if (c === '{')\n            nivel++;\n        else if (c === '}') {\n            nivel--;\n            if (nivel === 0) {\n                const candidato = t.slice(inicio, i + 1);\n                try {\n                    return { obj: JSON.parse(candidato) };\n                }\n                catch (e) {\n                    return { obj: null, erro: `JSON malformado: ${e.message}` };\n                }\n            }\n        }\n    }\n    return { obj: null, erro: 'JSON incompleto (chaves não balanceadas).' };\n}\n/**\n * Valida e sanitiza. `catalogo` é o array de entradas permitidas.\n * `nomeDesejado` compõe o nome final \"[IA] <nome>\".\n */\nfunction validarWorkflow(respostaLlm, catalogo, nomeDesejado, opcoes = {}) {\n    const erros = [];\n    const avisos = [];\n    const { obj, erro } = extrairJson(respostaLlm);\n    if (!obj) {\n        return { ok: false, erros: [erro ?? 'Falha ao extrair JSON.'], avisos };\n    }\n    // Caso \"impossível\"\n    const anyObj = obj;\n    if (anyObj.impossivel === true) {\n        return {\n            ok: false,\n            impossivel: true,\n            motivo: typeof anyObj.motivo === 'string' ? anyObj.motivo : 'A LLM indicou que o pedido é inviável.',\n            erros: [],\n            avisos,\n        };\n    }\n    const nodes = anyObj.nodes;\n    const connections = (anyObj.connections ?? {});\n    if (!Array.isArray(nodes) || nodes.length === 0) {\n        return { ok: false, erros: ['O JSON não contém a lista \"nodes\" com ao menos um nó.'], avisos };\n    }\n    const porTipo = new Map();\n    for (const c of catalogo)\n        porTipo.set(c.type, c);\n    const nomesVistos = new Set();\n    const nomesDuplicados = new Set();\n    let temGatilho = false;\n    const nosSanitizados = [];\n    for (const raw of nodes) {\n        if (!raw || typeof raw !== 'object') {\n            erros.push('Há um nó que não é um objeto válido.');\n            continue;\n        }\n        const nome = raw.name;\n        if (!nome || typeof nome !== 'string') {\n            erros.push('Há um nó sem a propriedade \"name\".');\n            continue;\n        }\n        if (nomesVistos.has(nome))\n            nomesDuplicados.add(nome);\n        nomesVistos.add(nome);\n        const entrada = porTipo.get(raw.type);\n        if (!entrada) {\n            erros.push(`O nó \"${nome}\" usa o tipo \"${raw.type}\", que não está no catálogo permitido.`);\n            continue;\n        }\n        if (entrada.categoria === 'gatilho')\n            temGatilho = true;\n        // Parâmetros obrigatórios\n        const params = (raw.parameters ?? {});\n        for (const obrig of entrada.obrigatorios) {\n            if (params[obrig] === undefined || params[obrig] === null || params[obrig] === '') {\n                erros.push(`O nó \"${nome}\" (${entrada.type}) está sem o parâmetro obrigatório \"${obrig}\".`);\n            }\n        }\n        // Monta nó sanitizado (remove campos proibidos; força typeVersion do catálogo)\n        const limpo = {\n            id: uuidV4(),\n            name: nome,\n            type: raw.type,\n            typeVersion: entrada.typeVersion,\n            parameters: params,\n            position: [0, 0],\n        };\n        // webhookId para nós que o exigem (webhook, form, formTrigger) — não para o form-ending interno\n        if (/\\.webhook$|formTrigger$|\\.form$/i.test(raw.type)) {\n            limpo.webhookId = uuidV4();\n        }\n        // Chat Model de IA (OpenAI/Gemini): anexa a credencial automaticamente (sub-nó de IA).\n        if (/lmChat/i.test(raw.type) && opcoes.credIA) {\n            limpo.credentials = { [opcoes.credIA.tipo]: { id: opcoes.credIA.id, name: opcoes.credIA.name } };\n        }\n        // OpenAI Chat Model v1.3 espera \"model\" como resource locator { __rl, mode, value }.\n        // A LLM costuma gerar como string simples; normalizamos aqui.\n        if (/lmChatOpenAi$/i.test(raw.type)) {\n            const m = params.model;\n            if (typeof m === 'string') {\n                params.model = { __rl: true, mode: 'list', value: m };\n            }\n            else if (!m || typeof m !== 'object') {\n                params.model = { __rl: true, mode: 'list', value: 'gpt-4o-mini' };\n            }\n        }\n        if (/gmail|slack|telegram|googleSheets|airtable/i.test(raw.type)) {\n            // Demais nós que exigem credencial: aviso (configurada manualmente no n8n).\n            avisos.push(`O nó \"${nome}\" (${entrada.type}) precisa de uma credencial configurada manualmente no n8n.`);\n        }\n        nosSanitizados.push(limpo);\n    }\n    for (const dup of nomesDuplicados) {\n        erros.push(`O nome de nó \"${dup}\" está duplicado; os nomes devem ser únicos.`);\n    }\n    if (!temGatilho) {\n        erros.push('O workflow precisa de pelo menos um nó de gatilho (ex.: Webhook, Schedule, Form).');\n    }\n    // Validação de conexões: alvos e origens devem existir.\n    // Suporta qualquer tipo de porta (main, ai_languageModel, etc.).\n    const nomesValidos = new Set(nosSanitizados.map((n) => n.name));\n    for (const origem of Object.keys(connections)) {\n        if (!nomesValidos.has(origem)) {\n            erros.push(`As conexões citam o nó de origem \"${origem}\", que não existe no workflow.`);\n        }\n        const porTipoPorta = connections[origem];\n        for (const tipoPorta of Object.keys(porTipoPorta ?? {})) {\n            for (const porta of porTipoPorta[tipoPorta] ?? []) {\n                for (const alvo of porta ?? []) {\n                    if (alvo?.node && !nomesValidos.has(alvo.node)) {\n                        erros.push(`A conexão a partir de \"${origem}\" aponta para \"${alvo.node}\", que não existe no workflow.`);\n                    }\n                }\n            }\n        }\n    }\n    // Regra: todo Basic LLM Chain precisa de um modelo (lmChat*) conectado via ai_languageModel.\n    const chains = nosSanitizados.filter((n) => /chainLlm$/i.test(n.type));\n    if (chains.length > 0) {\n        const temModelo = nosSanitizados.some((n) => /lmChat/i.test(n.type));\n        // mapeia quais chains recebem um ai_languageModel\n        const chainsComModelo = new Set();\n        for (const origem of Object.keys(connections)) {\n            const portas = connections[origem];\n            for (const porta of portas?.ai_languageModel ?? []) {\n                for (const alvo of porta ?? []) {\n                    if (alvo?.node)\n                        chainsComModelo.add(alvo.node);\n                }\n            }\n        }\n        if (!temModelo) {\n            erros.push('Há um \"Basic LLM Chain\" mas falta um nó de modelo (ex.: OpenAI Chat Model) conectado a ele pela porta ai_languageModel.');\n        }\n        else {\n            for (const chain of chains) {\n                if (!chainsComModelo.has(chain.name)) {\n                    erros.push(`O nó \"${chain.name}\" (Basic LLM Chain) não tem um modelo conectado na porta ai_languageModel. Adicione um OpenAI Chat Model conectado a ele.`);\n                }\n            }\n        }\n    }\n    // Regra: nós de ação/IA órfãos (sem entrada E sem saída) indicam fluxo incompleto.\n    if (nosSanitizados.length > 1) {\n        const temEntrada = new Set();\n        const temSaida = new Set();\n        for (const origem of Object.keys(connections)) {\n            const portas = connections[origem];\n            let origemTemAlgumaSaida = false;\n            for (const tipoPorta of Object.keys(portas ?? {})) {\n                for (const porta of portas[tipoPorta] ?? []) {\n                    for (const alvo of porta ?? []) {\n                        if (alvo?.node) {\n                            temEntrada.add(alvo.node);\n                            origemTemAlgumaSaida = true;\n                        }\n                    }\n                }\n            }\n            if (origemTemAlgumaSaida)\n                temSaida.add(origem);\n        }\n        for (const n of nosSanitizados) {\n            if (porTipo.get(n.type)?.categoria === 'gatilho')\n                continue; // gatilho não tem entrada\n            if (/lmChat/i.test(n.type))\n                continue; // modelo de IA conecta só por ai_languageModel (já checado acima)\n            if (!temEntrada.has(n.name) && !temSaida.has(n.name)) {\n                erros.push(`O nó \"${n.name}\" está solto (sem conexões). Conecte-o ao fluxo ou remova-o.`);\n            }\n        }\n    }\n    if (erros.length > 0) {\n        return { ok: false, erros, avisos };\n    }\n    // Normaliza conexões de If: a LLM às vezes gera uma porta \"false\"/\"true\" separada,\n    // mas o n8n If usa main[0]=true e main[1]=false. Converte para o formato correto.\n    const tiposPorNome = new Map(nosSanitizados.map((n) => [n.name, n.type]));\n    for (const origem of Object.keys(connections)) {\n        if (!/\\.if$/i.test(tiposPorNome.get(origem) ?? ''))\n            continue;\n        const portas = connections[origem];\n        const main = (Array.isArray(portas.main) ? portas.main : []);\n        const mainNorm = [main[0] ?? [], main[1] ?? []];\n        if ('true' in portas && Array.isArray(portas.true)) {\n            mainNorm[0] = (portas.true)[0] ?? mainNorm[0];\n            delete portas.true;\n        }\n        if ('false' in portas && Array.isArray(portas.false)) {\n            mainNorm[1] = (portas.false)[0] ?? mainNorm[1];\n            delete portas.false;\n        }\n        portas.main = mainNorm;\n    }\n    // Recalcula posições (layout limpo)\n    const pos = calcularPosicoes(nosSanitizados.map((n) => n.name), connections);\n    for (const n of nosSanitizados) {\n        n.position = pos.get(n.name) ?? [0, 300];\n    }\n    // Limpa campos proibidos de nível raiz implicitamente (não copiamos nada além do permitido)\n    void CAMPOS_PROIBIDOS;\n    const nomeFinal = `[IA] ${nomeDesejado}`.trim();\n    const workflow = {\n        name: nomeFinal,\n        nodes: nosSanitizados,\n        connections,\n        settings: { executionOrder: 'v1' },\n    };\n    const resumo = `${nosSanitizados.length} nós, ${Object.keys(connections).length} conexões de origem.`;\n    return { ok: true, workflow, erros: [], avisos, resumo };\n}\n\n\n// --- entrada ---\n// Trecho de entrada do Code node \"Validar e Sanitizar\" (Run Once for All Items).\n// Depende de: CATALOGO (constante), validarWorkflow (lib embutida).\n// Entrada: $json com a resposta da LLM; o estado vem de $('Montar Prompt').\n// Saída: { ok, workflow?, erros, avisos, impossivel?, motivo?, tentativa, resumo }\n\nconst item = $input.first().json;\n// A resposta da LLM pode vir em campos diferentes conforme o nó de IA:\nconst resposta =\n  item.text ??\n  item.output ??\n  item.response ??\n  (item.message && item.message.content) ??\n  (typeof item === 'string' ? item : JSON.stringify(item));\n\nconst estado = $('Montar Prompt').last().json;\nconst nomeDesejado = (estado && estado.nomeFluxo) || 'Fluxo Gerado';\nconst tentativa = (estado && estado.tentativa) || 1;\n\nconst nosValid = CATALOGO.map((n) => ({\n  type: n.type,\n  typeVersion: n.typeVersion,\n  categoria: n.categoria,\n  obrigatorios: n.obrigatorios,\n}));\n\n// CRED_IA é injetada pelo build ({ tipo, id, name } da credencial do chat model),\n// para que os nós de IA dos fluxos gerados já saiam com a credencial anexada.\nconst opcoes = typeof CRED_IA !== 'undefined' && CRED_IA ? { credIA: CRED_IA } : {};\nconst r = validarWorkflow(resposta, nosValid, nomeDesejado, opcoes);\nreturn [{ json: Object.assign({}, r, { tentativa }) }];\n"
+      }
+    },
+    {
+      "id": "n-if-ok",
+      "name": "ok?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        900,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c-ok",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-sucesso",
+      "name": "Saída Sucesso",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1160,
+        100
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s-ok",
+              "name": "ok",
+              "value": "={{ true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "s-wf",
+              "name": "workflow",
+              "value": "={{ $json.workflow }}",
+              "type": "object"
+            },
+            {
+              "id": "s-res",
+              "name": "resumo",
+              "value": "={{ $json.resumo }}",
+              "type": "string"
+            },
+            {
+              "id": "s-av",
+              "name": "avisos",
+              "value": "={{ $json.avisos }}",
+              "type": "array"
+            },
+            {
+              "id": "s-tent",
+              "name": "tentativa",
+              "value": "={{ $json.tentativa }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-if-rep",
+      "name": "pode repetir?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1160,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c-tent",
+              "leftValue": "={{ $json.tentativa }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "c-imp",
+              "leftValue": "={{ $json.impossivel === true }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-nova",
+      "name": "Nova Tentativa",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1420,
+        420
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r-nome",
+              "name": "nomeFluxo",
+              "value": "={{ $('Normalizar Entrada').first().json.nomeFluxo }}",
+              "type": "string"
+            },
+            {
+              "id": "r-gat",
+              "name": "gatilho",
+              "value": "={{ $('Normalizar Entrada').first().json.gatilho }}",
+              "type": "string"
+            },
+            {
+              "id": "r-aco",
+              "name": "acoes",
+              "value": "={{ $('Normalizar Entrada').first().json.acoes }}",
+              "type": "string"
+            },
+            {
+              "id": "r-det",
+              "name": "detalhes",
+              "value": "={{ $('Normalizar Entrada').first().json.detalhes }}",
+              "type": "string"
+            },
+            {
+              "id": "r-fb",
+              "name": "feedback",
+              "value": "={{ $('Normalizar Entrada').first().json.feedback }}",
+              "type": "string"
+            },
+            {
+              "id": "r-err",
+              "name": "errosAnteriores",
+              "value": "={{ $json.erros }}",
+              "type": "array"
+            },
+            {
+              "id": "r-tent",
+              "name": "tentativa",
+              "value": "={{ $json.tentativa + 1 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-falha",
+      "name": "Saída Falha",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1420,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f-ok",
+              "name": "ok",
+              "value": "={{ false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "f-err",
+              "name": "erros",
+              "value": "={{ $json.erros }}",
+              "type": "array"
+            },
+            {
+              "id": "f-imp",
+              "name": "impossivel",
+              "value": "={{ $json.impossivel === true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "f-mot",
+              "name": "motivo",
+              "value": "={{ $json.motivo ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f-tent",
+              "name": "tentativa",
+              "value": "={{ $json.tentativa }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Dry-Run": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Entrada": {
+      "main": [
+        [
+          {
+            "node": "Montar Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Prompt": {
+      "main": [
+        [
+          {
+            "node": "Gerar JSON (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gerar JSON (LLM)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar JSON (LLM)": {
+      "main": [
+        [
+          {
+            "node": "Validar e Sanitizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar e Sanitizar": {
+      "main": [
+        [
+          {
+            "node": "ok?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ok?": {
+      "main": [
+        [
+          {
+            "node": "Saída Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "pode repetir?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pode repetir?": {
+      "main": [
+        [
+          {
+            "node": "Nova Tentativa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Saída Falha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nova Tentativa": {
+      "main": [
+        [
+          {
+            "node": "Montar Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": true,
+  "staticData": null
+}

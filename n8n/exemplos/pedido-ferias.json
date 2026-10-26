@@ -1,0 +1,6 @@
+{
+  "nomeFluxo": "Aprovação de Férias",
+  "gatilho": "Formulário n8n",
+  "acoes": "O colaborador preenche um formulário com matrícula, data de início, data de fim e se quer vender parte das férias (abono). O fluxo consulta uma base de colaboradores (aba 'colaboradores') e o histórico (aba 'ferias'). Uma IA (Basic LLM Chain + Gemini) avalia se a solicitação respeita as políticas: período válido (datas coerentes e futuras), antecedência mínima de 30 dias, mínimo de 5 dias corridos, não ultrapassar o saldo disponível, e respeitar o intervalo desde as últimas férias. Se a IA reprovar, mostrar o motivo ao colaborador numa página de erro. Se aprovar na análise automática, enviar um e-mail (simulado) ao gestor responsável e abrir uma página de aprovação manual para o gestor decidir (Aprovar/Reprovar). Ao final, registrar o resultado e avisar o colaborador por e-mail (simulado).",
+  "detalhes": "Use um Code node 'Base (CSV)' com dados de exemplo embutidos: aba 'colaboradores' com matricula, nome, email, gestor, emailGestor, dataAdmissao, saldoDias; aba 'ferias' com matricula, inicio, fim, dias. Os e-mails devem ser Code nodes que apenas registram a mensagem (emailSimulado). A IA deve responder em JSON com {aprovado, motivo}."
+}

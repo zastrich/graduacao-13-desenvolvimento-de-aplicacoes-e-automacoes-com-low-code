@@ -1,0 +1,24 @@
+# IDE
+.vscode/
+.kiro/
+.agents/
+
+# Videos
+src/video/
+*.mp4
+
+# Dependências
+node_modules/
+
+# Segredos
+.env
+scripts/.env
+
+# Dados da instância local do n8n (database, config com encryptionKey, logs)
+n8n/instancia/.n8n/
+
+# IDs de credenciais criadas localmente (apontam para segredos na base local)
+scripts/n8n/.credenciais.json
+
+# Saídas temporárias do Playwright MCP
+.playwright-mcp/

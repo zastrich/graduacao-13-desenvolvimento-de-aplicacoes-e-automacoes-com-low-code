@@ -1,0 +1,9 @@
+{
+  "name": "n8n-instancia-projeto",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Instância local do n8n versionada junto ao projeto (versão fixa)",
+  "dependencies": {
+    "n8n": "2.43.8"
+  }
+}

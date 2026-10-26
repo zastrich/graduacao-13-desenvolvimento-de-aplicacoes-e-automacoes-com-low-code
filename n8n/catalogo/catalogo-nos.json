@@ -1,0 +1,501 @@
+{
+  "descricao": "Whitelist curada de nós que a LLM pode usar ao gerar workflows. O typeVersion real é preenchido por scripts/n8n/extrair-catalogo.ts (gera catalogo-nos.json).",
+  "geradoEm": "2026-10-25T21:02:06.536Z",
+  "nos": [
+    {
+      "type": "n8n-nodes-base.manualTrigger",
+      "displayName": "Manual Trigger",
+      "categoria": "gatilho",
+      "descricao": "Inicia o fluxo manualmente ao clicar em Executar. Útil para testes.",
+      "obrigatorios": [],
+      "exemplo": {},
+      "precisaCredencial": false,
+      "typeVersion": 1
+    },
+    {
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "displayName": "Schedule Trigger",
+      "categoria": "gatilho",
+      "descricao": "Dispara o fluxo em intervalos de tempo (cron/intervalo).",
+      "obrigatorios": [
+        "rule"
+      ],
+      "exemplo": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "precisaCredencial": false,
+      "typeVersion": 1.4
+    },
+    {
+      "type": "n8n-nodes-base.webhook",
+      "displayName": "Webhook",
+      "categoria": "gatilho",
+      "descricao": "Recebe requisições HTTP para iniciar o fluxo. Define método e caminho.",
+      "obrigatorios": [
+        "httpMethod",
+        "path"
+      ],
+      "exemplo": {
+        "httpMethod": "POST",
+        "path": "meu-webhook",
+        "responseMode": "onReceived"
+      },
+      "precisaCredencial": false,
+      "typeVersion": 2.2
+    },
+    {
+      "type": "n8n-nodes-base.formTrigger",
+      "displayName": "n8n Form Trigger",
+      "categoria": "gatilho",
+      "descricao": "Gera um formulário web que inicia o fluxo ao ser enviado.",
+      "obrigatorios": [
+        "formTitle",
+        "formFields"
+      ],
+      "exemplo": {
+        "formTitle": "Meu Formulário",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nome",
+              "fieldType": "text",
+              "requiredField": true
+            }
+          ]
+        }
+      },
+      "precisaCredencial": false,
+      "typeVersion": 2.6
+    },
+    {
+      "type": "n8n-nodes-base.gmailTrigger",
+      "displayName": "Gmail Trigger",
+      "categoria": "gatilho",
+      "descricao": "Dispara o fluxo quando um novo e-mail chega no Gmail.",
+      "obrigatorios": [],
+      "exemplo": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "precisaCredencial": true,
+      "typeVersion": 1.4
+    },
+    {
+      "type": "n8n-nodes-base.telegramTrigger",
+      "displayName": "Telegram Trigger",
+      "categoria": "gatilho",
+      "descricao": "Dispara o fluxo ao receber uma mensagem no bot do Telegram.",
+      "obrigatorios": [
+        "updates"
+      ],
+      "exemplo": {
+        "updates": [
+          "message"
+        ]
+      },
+      "precisaCredencial": true,
+      "typeVersion": 1.5
+    },
+    {
+      "type": "n8n-nodes-base.httpRequest",
+      "displayName": "HTTP Request",
+      "categoria": "acao",
+      "descricao": "Faz requisições HTTP a APIs externas (GET, POST, etc.).",
+      "obrigatorios": [
+        "url"
+      ],
+      "exemplo": {
+        "method": "GET",
+        "url": "https://api.exemplo.com/dados",
+        "options": {}
+      },
+      "precisaCredencial": false,
+      "typeVersion": 4.5
+    },
+    {
+      "type": "n8n-nodes-base.set",
+      "displayName": "Edit Fields (Set)",
+      "categoria": "acao",
+      "descricao": "Define ou transforma campos dos itens que passam pelo fluxo.",
+      "obrigatorios": [
+        "assignments"
+      ],
+      "exemplo": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "campo",
+              "value": "valor",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "precisaCredencial": false,
+      "typeVersion": 3.5
+    },
+    {
+      "type": "n8n-nodes-base.if",
+      "displayName": "If",
+      "categoria": "acao",
+      "descricao": "Ramifica o fluxo em duas saídas (true/false) conforme condições.",
+      "obrigatorios": [
+        "conditions"
+      ],
+      "exemplo": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valor }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "precisaCredencial": false,
+      "typeVersion": 2.3
+    },
+    {
+      "type": "n8n-nodes-base.switch",
+      "displayName": "Switch",
+      "categoria": "acao",
+      "descricao": "Ramifica o fluxo em múltiplas saídas conforme regras.",
+      "obrigatorios": [
+        "rules"
+      ],
+      "exemplo": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tipo }}",
+                    "rightValue": "A",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "A"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "precisaCredencial": false,
+      "typeVersion": 3.4
+    },
+    {
+      "type": "n8n-nodes-base.code",
+      "displayName": "Code",
+      "categoria": "acao",
+      "descricao": "Executa JavaScript para transformar dados (sem acesso a $env, require ou rede).",
+      "obrigatorios": [
+        "jsCode"
+      ],
+      "exemplo": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return items;"
+      },
+      "precisaCredencial": false,
+      "typeVersion": 2
+    },
+    {
+      "type": "n8n-nodes-base.merge",
+      "displayName": "Merge",
+      "categoria": "acao",
+      "descricao": "Combina dados de múltiplas entradas em uma saída.",
+      "obrigatorios": [],
+      "exemplo": {
+        "mode": "append"
+      },
+      "precisaCredencial": false,
+      "typeVersion": 3.2
+    },
+    {
+      "type": "n8n-nodes-base.wait",
+      "displayName": "Wait",
+      "categoria": "acao",
+      "descricao": "Pausa o fluxo por um tempo ou até um evento (webhook).",
+      "obrigatorios": [],
+      "exemplo": {
+        "resume": "timeInterval",
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "precisaCredencial": false,
+      "typeVersion": 1.1
+    },
+    {
+      "type": "n8n-nodes-base.filter",
+      "displayName": "Filter",
+      "categoria": "acao",
+      "descricao": "Mantém apenas os itens que satisfazem as condições.",
+      "obrigatorios": [
+        "conditions"
+      ],
+      "exemplo": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ativo }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "precisaCredencial": false,
+      "typeVersion": 2.3
+    },
+    {
+      "type": "n8n-nodes-base.splitOut",
+      "displayName": "Split Out",
+      "categoria": "acao",
+      "descricao": "Separa uma lista dentro de um item em vários itens.",
+      "obrigatorios": [
+        "fieldToSplitOut"
+      ],
+      "exemplo": {
+        "fieldToSplitOut": "dados",
+        "options": {}
+      },
+      "precisaCredencial": false,
+      "typeVersion": 1.1
+    },
+    {
+      "type": "n8n-nodes-base.aggregate",
+      "displayName": "Aggregate",
+      "categoria": "acao",
+      "descricao": "Agrega vários itens em um só (ex.: junta campos em uma lista).",
+      "obrigatorios": [],
+      "exemplo": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "precisaCredencial": false,
+      "typeVersion": 1
+    },
+    {
+      "type": "n8n-nodes-base.respondToWebhook",
+      "displayName": "Respond to Webhook",
+      "categoria": "acao",
+      "descricao": "Envia a resposta HTTP para um Webhook que iniciou o fluxo.",
+      "obrigatorios": [],
+      "exemplo": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "precisaCredencial": false,
+      "typeVersion": 1.5
+    },
+    {
+      "type": "n8n-nodes-base.noOp",
+      "displayName": "No Operation",
+      "categoria": "acao",
+      "descricao": "Não faz nada; útil como ponto de junção ou marcador.",
+      "obrigatorios": [],
+      "exemplo": {},
+      "precisaCredencial": false,
+      "typeVersion": 1
+    },
+    {
+      "type": "n8n-nodes-base.gmail",
+      "displayName": "Gmail",
+      "categoria": "acao",
+      "descricao": "Envia e gerencia e-mails no Gmail.",
+      "obrigatorios": [
+        "resource",
+        "operation"
+      ],
+      "exemplo": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "dest@exemplo.com",
+        "subject": "Assunto",
+        "message": "Corpo"
+      },
+      "precisaCredencial": true,
+      "typeVersion": 2.2
+    },
+    {
+      "type": "n8n-nodes-base.slack",
+      "displayName": "Slack",
+      "categoria": "acao",
+      "descricao": "Envia mensagens e interage com o Slack.",
+      "obrigatorios": [
+        "resource",
+        "operation"
+      ],
+      "exemplo": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "text": "Olá"
+      },
+      "precisaCredencial": true,
+      "typeVersion": 2.7
+    },
+    {
+      "type": "n8n-nodes-base.telegram",
+      "displayName": "Telegram",
+      "categoria": "acao",
+      "descricao": "Envia mensagens pelo bot do Telegram.",
+      "obrigatorios": [
+        "resource",
+        "operation"
+      ],
+      "exemplo": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "123456",
+        "text": "Olá"
+      },
+      "precisaCredencial": true,
+      "typeVersion": 1.2
+    },
+    {
+      "type": "n8n-nodes-base.googleSheets",
+      "displayName": "Google Sheets",
+      "categoria": "acao",
+      "descricao": "Lê e escreve dados em planilhas do Google Sheets.",
+      "obrigatorios": [
+        "resource",
+        "operation"
+      ],
+      "exemplo": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ID_DA_PLANILHA"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Página1"
+        }
+      },
+      "precisaCredencial": true,
+      "typeVersion": 4.7
+    },
+    {
+      "type": "n8n-nodes-base.airtable",
+      "displayName": "Airtable",
+      "categoria": "acao",
+      "descricao": "Lê e escreve registros no Airtable.",
+      "obrigatorios": [
+        "resource",
+        "operation"
+      ],
+      "exemplo": {
+        "resource": "record",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ID_DA_BASE"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ID_DA_TABELA"
+        }
+      },
+      "precisaCredencial": true,
+      "typeVersion": 2.2
+    },
+    {
+      "type": "n8n-nodes-base.form",
+      "displayName": "n8n Form (página)",
+      "categoria": "acao",
+      "descricao": "Página de formulário adicional ou tela final (Form Ending). Requer um Form Trigger no início.",
+      "obrigatorios": [
+        "operation"
+      ],
+      "exemplo": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "<h2>Concluído</h2>"
+      },
+      "precisaCredencial": false,
+      "typeVersion": 2.5
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "displayName": "Basic LLM Chain",
+      "categoria": "ia",
+      "descricao": "Nó de IA que envia um prompt a um modelo de linguagem e devolve a resposta em texto. Exige um nó de modelo (Gemini Chat Model) conectado na porta ai_languageModel. Use para avaliar/decidir em linguagem natural (ex.: validar regras de negócio). Responde em $json.text.",
+      "obrigatorios": [
+        "text"
+      ],
+      "exemplo": {
+        "promptType": "define",
+        "text": "={{ 'Avalie a solicitação: ' + JSON.stringify($json) }}",
+        "hasOutputParser": false
+      },
+      "precisaCredencial": false,
+      "typeVersion": 1.9
+    },
+    {
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "displayName": "OpenAI Chat Model",
+      "categoria": "ia",
+      "descricao": "Modelo de linguagem OpenAI. É um sub-nó: conecta-se SEMPRE na porta ai_languageModel de um Basic LLM Chain (nunca por main). A credencial é configurada automaticamente.",
+      "obrigatorios": [],
+      "exemplo": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "precisaCredencial": true,
+      "typeVersion": 1.3
+    }
+  ]
+}

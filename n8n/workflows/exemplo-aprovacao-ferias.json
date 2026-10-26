@@ -1,0 +1,681 @@
+{
+  "id": "Tlm883WHkXPaez7Y",
+  "name": "[IA] Aprovação de Férias",
+  "nodes": [
+    {
+      "id": "76d34196-8526-4f80-8163-d8f29ac8bbf0",
+      "name": "Formulário de Férias",
+      "webhookId": "4d20cfbd-4319-4091-8d47-9bf081d5d887",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -352,
+        304
+      ],
+      "parameters": {
+        "formTitle": "Solicitação de Férias",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Matrícula"
+            },
+            {
+              "fieldLabel": "Data de Início",
+              "fieldType": "date"
+            },
+            {
+              "fieldLabel": "Data de Fim",
+              "fieldType": "date"
+            },
+            {
+              "fieldLabel": "Vender Parte das Férias",
+              "fieldType": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ca006e69-1f35-4e91-a37c-856d7f3f88b4",
+      "name": "Avaliar",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        528,
+        304
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um assistente de RH. A validação das regras JÁ FOI FEITA por um sistema determinístico; NÃO recalcule nada.\n\nResultado do cálculo das regras:\n{{ JSON.stringify($json) }}\n\nResponda ESTRITAMENTE em JSON no formato {\"aprovado\": true|false, \"motivo\": \"texto claro e cordial\"}.\nUse exatamente aprovado = {{ $json.aprovadoRegras }}. No motivo, explique de forma amigável ao colaborador: se aprovado, confirme o período; se reprovado, liste as violações informadas. Não invente regras nem números.",
+        "batching": {}
+      }
+    },
+    {
+      "id": "9ac24e58-99bd-4619-8ebc-5a880a46796e",
+      "name": "Modelo",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        528
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "xx5KZ3u8XHEEQtpY",
+          "name": "OpenAI Meta-Fluxo"
+        }
+      }
+    },
+    {
+      "id": "49a7af40-993c-41bc-bd18-422ef83d466d",
+      "name": "Ler Resposta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        304
+      ],
+      "parameters": {
+        "jsCode": "// Extrai JSON da resposta da IA, tolerando cercas e texto ao redor.\nconst texto = String($json.text ?? $json.output ?? '');\nlet obj;\ntry {\n  obj = JSON.parse(texto);\n} catch (e) {\n  const cerca = texto.match(/\\`\\`\\`(?:json)?\\s*([\\s\\S]*?)\\`\\`\\`/i);\n  const corpo = cerca ? cerca[1] : texto.slice(texto.indexOf('{'), texto.lastIndexOf('}') + 1);\n  obj = JSON.parse(corpo);\n}\nreturn [{ json: { aprovado: obj.aprovado === true, motivo: obj.motivo || '' } }];"
+      }
+    },
+    {
+      "id": "bfa8c5b2-023f-4130-a683-5ef97fd688f2",
+      "name": "Decidir",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        304
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.aprovado }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "id": "db00d672-d426-4a49-9280-4e42f2b342c5"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "be734f19-15f5-4274-8c50-719e0d5e1645",
+      "name": "Página de Erro",
+      "webhookId": "b2f4031d-ded5-4344-b243-ebcd1827277d",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1264,
+        512
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText"
+      }
+    },
+    {
+      "id": "0fd399a4-0bf8-493b-bc33-031298e22f67",
+      "name": "Página de Aprovação do Gestor",
+      "webhookId": "e0d87718-ea25-4c24-bc14-6003d21a8782",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1568,
+        304
+      ],
+      "parameters": {
+        "formTitle": "Aprovação de Férias — Gestor",
+        "formDescription": "Analise os dados abaixo e decida.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Resumo",
+              "fieldType": "html",
+              "html": "=<h2>Aprovação de Férias — Gestor</h2><p><b>Colaborador:</b> {{ $('Calcular Regras').first().json.colaborador.nome }} (matrícula {{ $('Calcular Regras').first().json.matricula }})</p><p><b>Período solicitado:</b> {{ $('Calcular Regras').first().json.inicio }} a {{ $('Calcular Regras').first().json.fim }} ({{ $('Calcular Regras').first().json.dias }} dias)</p><p><b>Saldo de dias:</b> {{ $('Calcular Regras').first().json.saldoDias }}</p><p><b>Gestor responsável:</b> {{ $('Calcular Regras').first().json.colaborador.gestor }}</p><p><b>Avaliação automática:</b> {{ $('Ler Resposta').first().json.motivo }}</p>"
+            },
+            {
+              "fieldLabel": "Decisão",
+              "fieldType": "radio",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Aprovar"
+                  },
+                  {
+                    "option": "Reprovar"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Motivo da reprovação",
+              "fieldType": "textarea",
+              "requiredField": false
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ferias-calcular",
+      "name": "Calcular Regras",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        304
+      ],
+      "parameters": {
+        "jsCode": "// Calcula as regras de férias de forma determinística (sem IA).\nconst form = $('Formulário de Férias').first().json;\nconst base = $('Base (CSV)').first().json;\n\nconst matricula = String(form['Matrícula'] ?? form.matricula ?? '').trim();\nconst inicioStr = form['Data de Início'] ?? form.inicio;\nconst fimStr = form['Data de Fim'] ?? form.fim;\nconst venderStr = String(form['Vender Parte das Férias'] ?? '').toLowerCase();\nconst vender = venderStr.startsWith('s') || venderStr === 'sim' || venderStr === 'true';\n\nconst colaborador = (base.colaboradores || []).find(c => String(c.matricula) === matricula) || null;\nconst historico = (base.ferias || []).filter(f => String(f.matricula) === matricula);\n\nconst hoje = new Date();\nconst inicio = new Date(inicioStr);\nconst fim = new Date(fimStr);\nconst MS_DIA = 24 * 60 * 60 * 1000;\n\nconst violacoes = [];\nif (!colaborador) violacoes.push('Colaborador com matrícula ' + matricula + ' não encontrado na base.');\nif (isNaN(inicio.getTime()) || isNaN(fim.getTime())) violacoes.push('Datas inválidas.');\n\nlet dias = 0, antecedencia = 0, intervaloDias = null;\nif (!isNaN(inicio.getTime()) && !isNaN(fim.getTime())) {\n  dias = Math.round((fim - inicio) / MS_DIA) + 1;\n  antecedencia = Math.round((inicio - hoje) / MS_DIA);\n  if (fim < inicio) violacoes.push('A data de fim é anterior à data de início.');\n  if (antecedencia < 30) violacoes.push('Antecedência de ' + antecedencia + ' dias é menor que o mínimo de 30 dias.');\n  if (dias < 5) violacoes.push('Período de ' + dias + ' dias é menor que o mínimo de 5 dias.');\n  if (colaborador && dias > Number(colaborador.saldoDias)) violacoes.push('Período de ' + dias + ' dias excede o saldo de ' + colaborador.saldoDias + ' dias.');\n}\nif (colaborador && historico.length > 0) {\n  const ultimoFim = historico.map(f => new Date(f.fim)).sort((a,b) => b - a)[0];\n  intervaloDias = Math.round((inicio - ultimoFim) / MS_DIA);\n}\n\nconst aprovadoRegras = violacoes.length === 0;\nreturn [{ json: {\n  matricula, inicio: inicioStr, fim: fimStr, dias, antecedencia, vender,\n  intervaloDesdeUltimasFeriasDias: intervaloDias,\n  saldoDias: colaborador ? colaborador.saldoDias : null,\n  colaborador, aprovadoRegras, violacoes,\n} }];"
+      }
+    },
+    {
+      "id": "ferias-sheets-colaboradores",
+      "name": "Ler Colaboradores",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -112,
+        192
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1gcXSNOT8jkXP5nt4EMvnihJqjZ200b153AK_btA33og"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "colaboradores"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tMrBafkEAsc5lYHc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "ferias-sheets-ferias",
+      "name": "Ler Férias",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -112,
+        432
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1gcXSNOT8jkXP5nt4EMvnihJqjZ200b153AK_btA33og"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "ferias"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tMrBafkEAsc5lYHc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "ferias-montar-base",
+      "name": "Base (CSV)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        304
+      ],
+      "parameters": {
+        "jsCode": "const colaboradores = $('Ler Colaboradores').all().map(i => ({\n  matricula: String(i.json.matricula ?? '').trim(),\n  nome: i.json.nome,\n  email: i.json.email,\n  gestor: i.json.gestor,\n  emailGestor: i.json.emailGestor,\n  dataAdmissao: i.json.dataAdmissao,\n  saldoDias: Number(i.json.saldoDias),\n}));\nconst ferias = $('Ler Férias').all().map(i => ({\n  matricula: String(i.json.matricula ?? '').trim(),\n  inicio: i.json.inicio,\n  fim: i.json.fim,\n  dias: Number(i.json.dias),\n}));\nreturn [{ json: { colaboradores, ferias } }];"
+      }
+    },
+    {
+      "id": "454c1597-628b-4dd9-8e20-091d22700b99",
+      "name": "Enviar E-mail ao Gestor",
+      "webhookId": "f975ae78-dd28-40ac-b2af-e89e075b0e0d",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1312,
+        304
+      ],
+      "parameters": {
+        "sendTo": "={{ $('Calcular Regras').first().json.colaborador.emailGestor }}",
+        "subject": "Aprovação de Férias — ação necessária",
+        "emailType": "text",
+        "message": "=Olá {{ $('Calcular Regras').first().json.colaborador.gestor }},\n\nO colaborador {{ $('Calcular Regras').first().json.colaborador.nome }} (matrícula {{ $('Calcular Regras').first().json.matricula }}) teve uma solicitação de férias APROVADA pelas regras automáticas.\n\nPeríodo: {{ $('Calcular Regras').first().json.inicio }} a {{ $('Calcular Regras').first().json.fim }} ({{ $('Calcular Regras').first().json.dias }} dias).\n\nAvaliação: {{ $('Ler Resposta').first().json.motivo }}\n\nPor favor, confirme a aprovação na página indicada pelo sistema.\n\n-- Sistema de Férias (automação n8n)",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aRamFGrlqyZa5UMH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "7846db4f-4f90-4285-9e03-3c1bddbba957",
+      "name": "Registrar Conclusão",
+      "webhookId": "13c2b053-14b9-4f41-9d17-43b5a22395f7",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1824,
+        304
+      ],
+      "parameters": {
+        "sendTo": "={{ $('Calcular Regras').first().json.colaborador.email }}",
+        "subject": "Suas férias foram aprovadas",
+        "emailType": "text",
+        "message": "=Olá {{ $('Calcular Regras').first().json.colaborador.nome }},\n\nSua solicitação de férias foi APROVADA.\n\nPeríodo: {{ $('Calcular Regras').first().json.inicio }} a {{ $('Calcular Regras').first().json.fim }} ({{ $('Calcular Regras').first().json.dias }} dias).\n\n{{ $('Ler Resposta').first().json.motivo }}\n\nBom descanso!\n\n-- Sistema de Férias (automação n8n)",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aRamFGrlqyZa5UMH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "ferias-email-reprova-auto",
+      "name": "E-mail Reprovação Automática",
+      "webhookId": "87e4cd7a-f8fb-4c1f-ac63-8860f6842222",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1024,
+        512
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Calcular Regras').first().json.colaborador.email }}",
+        "subject": "Sua solicitação de férias foi reprovada",
+        "emailType": "text",
+        "message": "=Olá {{ $('Calcular Regras').first().json.colaborador.nome }},\n\nSua solicitação de férias foi REPROVADA pela avaliação automática.\n\nPeríodo solicitado: {{ $('Calcular Regras').first().json.inicio }} a {{ $('Calcular Regras').first().json.fim }}.\n\nMotivo: {{ $('Ler Resposta').first().json.motivo }}\n\nSe precisar, ajuste o pedido e solicite novamente.\n\n-- Sistema de Férias (automação n8n)",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aRamFGrlqyZa5UMH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "ferias-decisao-gestor",
+      "name": "Decisão do Gestor",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1788,
+        304
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json['Decisão'] }}",
+              "rightValue": "Aprovar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ferias-email-reprova-gestor",
+      "name": "E-mail Reprovação Gestor",
+      "webhookId": "d7a2a371-0ded-4d21-9457-1d71a42d4ad5",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1824,
+        504
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Calcular Regras').first().json.colaborador.email }}",
+        "subject": "Sua solicitação de férias foi reprovada pelo gestor",
+        "emailType": "text",
+        "message": "=Olá {{ $('Calcular Regras').first().json.colaborador.nome }},\n\nSua solicitação de férias foi REPROVADA pelo gestor {{ $('Calcular Regras').first().json.colaborador.gestor }}.\n\nPeríodo solicitado: {{ $('Calcular Regras').first().json.inicio }} a {{ $('Calcular Regras').first().json.fim }}.\n\nMotivo informado: {{ $('Página de Aprovação do Gestor').first().json['Motivo da reprovação'] || 'Não informado pelo gestor.' }}\n\nProcure seu gestor para mais detalhes.\n\n-- Sistema de Férias (automação n8n)",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aRamFGrlqyZa5UMH",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "ferias-pagina-reprovado",
+      "name": "Página Reprovado",
+      "webhookId": "ferias-reprovado-webhook",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        2084,
+        504
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "completionTitle": "Férias reprovadas",
+        "completionMessage": "A solicitação foi reprovada e o colaborador foi notificado por e-mail com o motivo."
+      }
+    },
+    {
+      "id": "ferias-append-planilha",
+      "name": "Registrar Férias na Planilha",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1988,
+        264
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1gcXSNOT8jkXP5nt4EMvnihJqjZ200b153AK_btA33og"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "ferias"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "matricula": "={{ $('Calcular Regras').first().json.matricula }}",
+            "inicio": "={{ $('Calcular Regras').first().json.inicio }}",
+            "fim": "={{ $('Calcular Regras').first().json.fim }}",
+            "dias": "={{ $('Calcular Regras').first().json.dias }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "matricula",
+              "displayName": "matricula",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "inicio",
+              "displayName": "inicio",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fim",
+              "displayName": "fim",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dias",
+              "displayName": "dias",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tMrBafkEAsc5lYHc",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Formulário de Férias": {
+      "main": [
+        [
+          {
+            "node": "Ler Colaboradores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base (CSV)": {
+      "main": [
+        [
+          {
+            "node": "Calcular Regras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Avaliar",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avaliar": {
+      "main": [
+        [
+          {
+            "node": "Ler Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Resposta": {
+      "main": [
+        [
+          {
+            "node": "Decidir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decidir": {
+      "main": [
+        [
+          {
+            "node": "Enviar E-mail ao Gestor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "E-mail Reprovação Automática",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar E-mail ao Gestor": {
+      "main": [
+        [
+          {
+            "node": "Página de Aprovação do Gestor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Página de Aprovação do Gestor": {
+      "main": [
+        [
+          {
+            "node": "Decisão do Gestor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Regras": {
+      "main": [
+        [
+          {
+            "node": "Avaliar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Colaboradores": {
+      "main": [
+        [
+          {
+            "node": "Ler Férias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Férias": {
+      "main": [
+        [
+          {
+            "node": "Base (CSV)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-mail Reprovação Automática": {
+      "main": [
+        [
+          {
+            "node": "Página de Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decisão do Gestor": {
+      "main": [
+        [
+          {
+            "node": "Registrar Férias na Planilha",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "E-mail Reprovação Gestor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-mail Reprovação Gestor": {
+      "main": [
+        [
+          {
+            "node": "Página Reprovado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Férias na Planilha": {
+      "main": [
+        [
+          {
+            "node": "Registrar Conclusão",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "active": true,
+  "staticData": null
+}

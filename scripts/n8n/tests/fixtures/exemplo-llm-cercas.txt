@@ -1,0 +1,29 @@
+Claro! Aqui está o workflow solicitado:
+
+```json
+{
+  "nodes": [
+    {
+      "name": "Agendamento",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "parameters": { "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] } }
+    },
+    {
+      "name": "Buscar dados",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": { "method": "GET", "url": "https://api.exemplo.com/status", "options": {} }
+    },
+    {
+      "name": "Enviar e-mail",
+      "type": "n8n-nodes-base.gmail",
+      "parameters": { "resource": "message", "operation": "send", "sendTo": "dest@exemplo.com", "subject": "Status", "message": "={{ $json.status }}" }
+    }
+  ],
+  "connections": {
+    "Agendamento": { "main": [[{ "node": "Buscar dados", "type": "main", "index": 0 }]] },
+    "Buscar dados": { "main": [[{ "node": "Enviar e-mail", "type": "main", "index": 0 }]] }
+  }
+}
+```
+
+Espero ter ajudado!

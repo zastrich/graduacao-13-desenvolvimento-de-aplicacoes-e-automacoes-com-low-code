@@ -1,0 +1,30 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "description": "Scripts utilitários (Node.js + TypeScript) para o meta-fluxo n8n",
+  "type": "module",
+  "scripts": {
+    "read-pdf": "tsx read_pdf.ts",
+    "test": "tsx --test n8n/tests/*.test.ts",
+    "n8n:install": "npm --prefix ../n8n/instancia install",
+    "n8n:version": "tsx n8n/n8n-local.ts version",
+    "n8n:start": "tsx n8n/n8n-local.ts start",
+    "n8n:export": "tsx n8n/exportar-api.ts",
+    "n8n:export-cli": "tsx n8n/n8n-local.ts export",
+    "n8n:import": "tsx n8n/n8n-local.ts import",
+    "n8n:verificar-restauracao": "tsx n8n/verificar-restauracao.ts",
+    "n8n:ping": "tsx n8n/ping.ts",
+    "n8n:catalogo": "tsx n8n/extrair-catalogo.ts",
+    "build:n8n": "tsx n8n/build-code-nodes.ts",
+    "n8n:dry-run": "tsx n8n/dry-run.ts"
+  },
+  "dependencies": {
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pdf-parse": "^1.1.4",
+    "tsx": "^4.7.0",
+    "typescript": "^5.0.0"
+  }
+}

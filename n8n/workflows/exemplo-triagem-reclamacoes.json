@@ -1,0 +1,364 @@
+{
+  "id": "aIOM89MKlMuy8oA1",
+  "name": "[IA] Triagem de Reclamações",
+  "nodes": [
+    {
+      "id": "205d0784-5390-42ac-b9bf-5e3b6d506580",
+      "name": "Formulário de Reclamação",
+      "webhookId": "reclamacoes-form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {
+        "formTitle": "Central de Reclamações",
+        "formDescription": "Registre sua reclamação. Nossa equipe fará a triagem e retornará por e-mail.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nome",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "E-mail",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Assunto",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Descrição",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "04c0799f-3c66-4963-bc81-957c9e237c3a",
+      "name": "Criar Card",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        220,
+        400
+      ],
+      "parameters": {
+        "resource": "card",
+        "operation": "create",
+        "listId": "6990eaa171fa0f1cf5a70e6e",
+        "name": "={{ $json['Assunto'] }}",
+        "additionalFields": {
+          "desc": "=Reclamação de {{ $json['Nome'] }} ({{ $json['E-mail'] }}):\\n\\n{{ $json['Descrição'] }}"
+        }
+      },
+      "credentials": {
+        "trelloApi": {
+          "id": "qtwao8ofwPIDDzB2",
+          "name": "Trello Reclamações"
+        }
+      }
+    },
+    {
+      "id": "a6c4e635-ec37-4d60-93ae-6198dd46cb97",
+      "name": "Ler Cards Abertos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        400
+      ],
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "trelloApi",
+        "url": "=https://api.trello.com/1/boards/6990eaa171fa0f1cf5a70e49/cards",
+        "options": {}
+      },
+      "credentials": {
+        "trelloApi": {
+          "id": "qtwao8ofwPIDDzB2",
+          "name": "Trello Reclamações"
+        }
+      }
+    },
+    {
+      "id": "9f5df7ad-27e4-4d3f-84c3-12db8666da19",
+      "name": "Montar Contexto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Resume os cards abertos (insumo) e os dados da reclamação para a IA.\nconst form = $('Formulário de Reclamação').first().json;\nconst cards = $('Ler Cards Abertos').all().map(i => i.json);\n\n// Mapa listId -> status legível\nconst LISTAS = {\"6990eaa171fa0f1cf5a70e6e\":\"N1 - Atendimento Chatbot\",\"6990eaa171fa0f1cf5a70e6f\":\"N2 - Atendimento Humano\",\"6990eaa171fa0f1cf5a70e70\":\"N3 - Desenvolvimento\",\"6990eaf66b40576ebc92357c\":\"Concluído\"};\n\nconst cardAtualId = $('Criar Card').first().json.id;\n\nconst abertos = cards\n  .filter(c => c.id !== cardAtualId)\n  .map(c => ({ nome: c.name, descricao: (c.desc||'').slice(0,300), status: LISTAS[c.idList] || c.idList }));\n\nreturn [{ json: {\n  reclamacao: {\n    nome: form['Nome'] ?? form.nome,\n    email: form['E-mail'] ?? form.email,\n    assunto: form['Assunto'] ?? form.assunto,\n    descricao: form['Descrição'] ?? form['Descricao'] ?? form.descricao,\n  },\n  cardId: cardAtualId,\n  cardsAbertos: abertos,\n} }];"
+      }
+    },
+    {
+      "id": "485ebccc-472e-4808-b976-287f9fd3e2fd",
+      "name": "Avaliar",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        880,
+        400
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um agente de triagem de suporte (N1). Analise a reclamação do cliente e os chamados já abertos no quadro (insumo) e decida o encaminhamento.\n\nReclamação:\n{{ JSON.stringify($json.reclamacao) }}\n\nChamados já abertos no quadro (para você evitar duplicar e identificar se o problema já está sendo tratado):\n{{ JSON.stringify($json.cardsAbertos) }}\n\nRegras de decisão:\n- \"resolvido\": você consegue resolver/responder diretamente (dúvida simples, orientação, informação). O chamado será movido para Concluído.\n- \"humano\": precisa de atendimento humano (reclamação sem solução automática, insatisfação, pedido de reembolso, etc.). Move para \"N2 - Atendimento Humano\" e informe prazo de 48 horas.\n- \"em_andamento\": o problema JÁ aparece entre os chamados abertos (mesmo bug/assunto). Use o status onde ele já está (N2 - Atendimento Humano, ou N3 - Desenvolvimento) e informe o cliente que já está em tratamento.\n\nResponda ESTRITAMENTE em JSON:\n{\"decisao\":\"resolvido|humano|em_andamento\",\"statusExistente\":\"N2 - Atendimento Humano|N3 - Desenvolvimento|null\",\"prazoHoras\":48,\"respostaCliente\":\"texto cordial e claro para enviar por e-mail\",\"comentarioCard\":\"resumo objetivo para registrar no card\"}\n\nEm respostaCliente escreva apenas o corpo da mensagem, em um único parágrafo corrido, SEM saudação inicial (não comece com \"Olá\"), SEM assinatura e SEM quebras de linha ou o caractere \\n (a saudação e a assinatura são adicionadas automaticamente). Em \"humano\" e \"em_andamento\" mencione o prazo de 48 horas quando fizer sentido. Não invente dados.",
+        "batching": {}
+      }
+    },
+    {
+      "id": "276b05ea-250b-4c01-bc76-f0f19bfc35ac",
+      "name": "Modelo",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        620
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "xx5KZ3u8XHEEQtpY",
+          "name": "OpenAI Meta-Fluxo"
+        }
+      }
+    },
+    {
+      "id": "cf38c0d2-e196-45a3-aea6-e0c06d563b9f",
+      "name": "Ler Decisão",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const texto = String($json.text ?? $json.output ?? '');\nlet obj;\ntry { obj = JSON.parse(texto); }\ncatch (e) {\n  const cerca = texto.match(/\\`\\`\\`(?:json)?\\s*([\\s\\S]*?)\\`\\`\\`/i);\n  const corpo = cerca ? cerca[1] : texto.slice(texto.indexOf('{'), texto.lastIndexOf('}') + 1);\n  obj = JSON.parse(corpo);\n}\nconst ctx = $('Montar Contexto').first().json;\nconst LISTAS_ID = {\"N2 - Atendimento Humano\":\"6990eaa171fa0f1cf5a70e6f\",\"N3 - Desenvolvimento\":\"6990eaa171fa0f1cf5a70e70\"};\nlet listaDestino;\nif (obj.decisao === 'resolvido') listaDestino = '6990eaf66b40576ebc92357c';\nelse if (obj.decisao === 'humano') listaDestino = '6990eaa171fa0f1cf5a70e6f';\nelse listaDestino = LISTAS_ID[obj.statusExistente] || '6990eaa171fa0f1cf5a70e6f';\n// Normaliza quebras de linha: a IA às vezes devolve \"\\n\" literal no texto.\nconst limpar = (s) => String(s || '').replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n').replace(/\\r\\n/g, '\\n');\nreturn [{ json: {\n  decisao: obj.decisao,\n  statusExistente: obj.statusExistente || null,\n  prazoHoras: obj.prazoHoras || 48,\n  respostaCliente: limpar(obj.respostaCliente),\n  comentarioCard: limpar(obj.comentarioCard).replace(/\\n+/g, ' '),\n  listaDestino,\n  cardId: ctx.cardId,\n  email: ctx.reclamacao.email,\n  nome: ctx.reclamacao.nome,\n  assunto: ctx.reclamacao.assunto,\n  // Corpo do e-mail já montado com quebras de linha REAIS (evita \\n literal no envio).\n  corpoEmail: 'Olá ' + ctx.reclamacao.nome + ',\\n\\n' + limpar(obj.respostaCliente) + '\\n\\n-- Central de Reclamações (automação n8n)',\n} }];"
+      }
+    },
+    {
+      "id": "e2dd8518-9cfc-41ed-b8de-30e4de1d9ad6",
+      "name": "Mover Card",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        400
+      ],
+      "parameters": {
+        "resource": "card",
+        "operation": "update",
+        "id": "={{ $json.cardId }}",
+        "updateFields": {
+          "idList": "={{ $json.listaDestino }}"
+        }
+      },
+      "credentials": {
+        "trelloApi": {
+          "id": "qtwao8ofwPIDDzB2",
+          "name": "Trello Reclamações"
+        }
+      }
+    },
+    {
+      "id": "6551be3c-82d3-4122-8208-bd1d21fb3cec",
+      "name": "Enviar E-mail ao Cliente",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1540,
+        400
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Ler Decisão').first().json.email }}",
+        "subject": "=Sua reclamação: {{ $('Ler Decisão').first().json.assunto }}",
+        "emailType": "text",
+        "message": "={{ $('Ler Decisão').first().json.corpoEmail }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aRamFGrlqyZa5UMH",
+          "name": "Gmail account"
+        }
+      },
+      "webhookId": "3b6550a4-b26c-4678-8c76-9e1f28a8bab3"
+    },
+    {
+      "id": "93a5d3cf-d1a0-42b0-865a-a6ac9bcef33c",
+      "name": "Montar Comentário",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const d = $('Ler Decisão').first().json;\nconst envio = $('Enviar E-mail ao Cliente').first().json;\nconst comentario =\n  '📧 Resposta enviada ao cliente — triagem: ' + d.decisao + '\\n' +\n  'Para: ' + d.email + '\\n' +\n  'Assunto: Sua reclamação: ' + d.assunto + '\\n' +\n  (envio && envio.id ? 'ID Gmail: ' + envio.id + ' (enviado)\\n' : '') +\n  '-------------------------------------------\\n' +\n  d.corpoEmail + '\\n' +\n  '-------------------------------------------\\n' +\n  'Observações da triagem: ' + d.comentarioCard;\nreturn [{ json: { cardId: d.cardId, comentario } }];"
+      }
+    },
+    {
+      "id": "17e93a01-288d-4afd-bdc7-ef9cdb2a3800",
+      "name": "Comentar no Card",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        400
+      ],
+      "parameters": {
+        "resource": "cardComment",
+        "operation": "create",
+        "cardId": "={{ $json.cardId }}",
+        "text": "={{ $json.comentario }}"
+      },
+      "credentials": {
+        "trelloApi": {
+          "id": "qtwao8ofwPIDDzB2",
+          "name": "Trello Reclamações"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Formulário de Reclamação": {
+      "main": [
+        [
+          {
+            "node": "Criar Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Card": {
+      "main": [
+        [
+          {
+            "node": "Ler Cards Abertos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Cards Abertos": {
+      "main": [
+        [
+          {
+            "node": "Montar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Contexto": {
+      "main": [
+        [
+          {
+            "node": "Avaliar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Avaliar",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avaliar": {
+      "main": [
+        [
+          {
+            "node": "Ler Decisão",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Decisão": {
+      "main": [
+        [
+          {
+            "node": "Mover Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mover Card": {
+      "main": [
+        [
+          {
+            "node": "Enviar E-mail ao Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar E-mail ao Cliente": {
+      "main": [
+        [
+          {
+            "node": "Montar Comentário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Comentário": {
+      "main": [
+        [
+          {
+            "node": "Comentar no Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": true,
+  "staticData": null
+}

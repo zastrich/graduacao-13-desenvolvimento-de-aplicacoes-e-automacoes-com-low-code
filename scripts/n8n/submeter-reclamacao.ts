@@ -9,23 +9,26 @@ const base = (env.N8N_URL ?? 'http://localhost:5678').replace(/\/+$/, '');
 
 // O Form Trigger mapeia os campos pelos nomes internos field-0..field-3 (ordem do form).
 const casos: Record<string, Record<string, string>> = {
+  // Similar a um chamado já aberto em N3 (bug de PDF), mas com outras palavras -> em_andamento
   em_andamento: {
-    'field-0': 'Fernanda Reis',
-    'field-1': 'zas+cliente3@code200.com.br',
-    'field-2': 'Erro ao exportar relatório em PDF',
-    'field-3': 'Toda vez que tento baixar o relatório mensal em PDF aparece um erro e o download não completa.',
+    'field-0': 'Helena Martins',
+    'field-1': 'zas+helena@code200.com.br',
+    'field-2': 'Documento em PDF não é gerado',
+    'field-3': 'Quando clico para gerar a fatura em formato PDF, a página dá erro e o arquivo nunca é baixado. Já tentei em outro navegador e continua.',
   },
+  // Dúvida simples que a IA resolve sozinha -> resolvido (Concluído)
   resolvido: {
-    'field-0': 'Mariana Lopes',
-    'field-1': 'zas+cliente1@code200.com.br',
-    'field-2': 'Como altero minha senha?',
-    'field-3': 'Esqueci onde fica a opção de trocar a senha no aplicativo. Podem me orientar?',
+    'field-0': 'João Pedro Alves',
+    'field-1': 'zas+joaopedro@code200.com.br',
+    'field-2': 'Como mudo o idioma do aplicativo?',
+    'field-3': 'Quero deixar o aplicativo em inglês mas não encontro onde trocar o idioma. Podem me orientar?',
   },
+  // Caso sensível que exige pessoa -> humano (N2, prazo 48h)
   humano: {
-    'field-0': 'Carlos Dias',
-    'field-1': 'zas+cliente2@code200.com.br',
-    'field-2': 'Pedido de reembolso não atendido',
-    'field-3': 'Paguei por um plano anual mas fui cobrado em dobro. Quero o reembolso e estou insatisfeito.',
+    'field-0': 'Roberta Nunes',
+    'field-1': 'zas+roberta@code200.com.br',
+    'field-2': 'Fui cobrada após cancelar e quero reembolso',
+    'field-3': 'Cancelei minha assinatura no mês passado e mesmo assim fui cobrada de novo. Estou muito insatisfeita e exijo o reembolso imediato.',
   },
 };
 

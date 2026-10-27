@@ -10,7 +10,7 @@ Uma automação **low-code no n8n** que cria **outras automações** a partir de
 
 ## Vídeo de demonstração (Pitch)
 
-[![Watch the video](https://img.youtube.com/vi/j1CpBtYlnoA/maxresdefault.jpg)](https://youtu.be/j1CpBtYlnoA)
+[![Watch the video](https://img.youtube.com/vi/WNkb3f7SCyM/maxresdefault.jpg)](https://youtu.be/WNkb3f7SCyM)
 
 ## O Problema
 

@@ -1,0 +1,22 @@
+[
+  {
+    "arquivo": "01-problema.mp3",
+    "texto": "Em toda empresa que cresce, há processos que dependem de pessoas levando informação de uma ferramenta para outra: uma solicitação chega, alguém consulta uma base, aplica regras, decide, registra em outro sistema e avisa o responsável. Isso é lento, gera retrabalho e não deixa rastro. Eu peguei dois processos reais, aprovação de férias e triagem de reclamações, e os redesenhei com Low-Code, automação e inteligência artificial no n8n."
+  },
+  {
+    "arquivo": "02-arquitetura.mp3",
+    "texto": "A base do projeto é um meta-fluxo: o Criador Automático de Fluxos. Você descreve a automação em linguagem natural, a inteligência artificial gera o JSON do workflow, um validador confere tudo contra um catálogo de nós permitidos, e só depois da minha aprovação o fluxo é criado. A partir dessa base eu construí dois processos de verdade. Em ambos, a lógica é a mesma: entrada, processamento, dados, inteligência artificial, decisão, ação, supervisão e registro. A regra que eu segui o tempo todo: nem toda decisão é da IA. Conta é código, redação e classificação são da IA, e a aprovação crítica é humana."
+  },
+  {
+    "arquivo": "03-ferias.mp3",
+    "texto": "No primeiro fluxo, o colaborador pede férias por um formulário. O n8n lê a base no Google Sheets, um nó de código calcula as regras, antecedência, período e saldo, e a inteligência artificial apenas redige a decisão, sem fazer conta. Se reprovar automaticamente, o colaborador já é avisado por e-mail com o motivo. Se passar, entra o ponto de supervisão humana: o gestor recebe o e-mail e aprova numa tela que mostra o resumo da solicitação. Só depois de aprovado, o período é gravado de volta na planilha e o colaborador é notificado."
+  },
+  {
+    "arquivo": "04-reclamacoes.mp3",
+    "texto": "No segundo fluxo, o cliente registra uma reclamação. O n8n abre um card no Trello e, este é o ponto esperto, lê os chamados que já estão abertos no quadro para dar contexto à inteligência artificial. A IA classifica: se é algo que ela resolve, responde e move o card para Concluído; se precisa de pessoa, encaminha para o atendimento humano com prazo de quarenta e oito horas; e se o problema já está em desenvolvimento, ela reconhece pelo quadro e responde conforme o status atual. Em todos os casos, o cliente recebe um e-mail e o conteúdo exato dessa resposta fica registrado como comentário no card, garantindo rastreabilidade."
+  },
+  {
+    "arquivo": "05-ganhos.mp3",
+    "texto": "Resumindo: a inteligência artificial tem função concreta em três pontos, gera automações, redige decisões e classifica demandas, sempre devolvendo um JSON estruturado que o fluxo usa para rotear. O humano entra onde a ação é crítica: aprovar um workflow antes de criar, aprovar as férias antes de registrar, e assumir a reclamação quando o caso exige uma pessoa. Os ganhos são tempo de execução menor, menos retrabalho, decisões consistentes e rastreabilidade de ponta a ponta. É uma operação inteligente, não uma sequência de gatilho e ação. Obrigado!"
+  }
+]

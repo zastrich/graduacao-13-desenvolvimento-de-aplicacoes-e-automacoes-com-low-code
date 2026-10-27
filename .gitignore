@@ -5,6 +5,7 @@
 
 # Videos
 src/video/
+*.mp3
 *.mp4
 
 # Dependências
